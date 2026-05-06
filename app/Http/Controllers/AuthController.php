@@ -1,24 +1,37 @@
 <?php
 
+
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
-class AuthController extends Controller
-{
-    public function showRegister()
-    {
-        return view('register');
-    }
+class AuthController extends Controller {
 
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
+            'name' => 'required|string|max:255',
+
+            'email' => [
+                'required',
+                'email',
+                'unique:users',
+                'regex:/^[a-zA-Z0-9._%+-]+@(utm\.my|graduate\.utm\.my)$/'
+            ],
+
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'max:16',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/'
+            ],
+        ], [
+            'email.regex' => 'Email must be @utm.my or @graduate.utm.my',
+            'password.regex' => 'Password must include uppercase, lowercase, number and special character',
         ]);
 
         User::create([
