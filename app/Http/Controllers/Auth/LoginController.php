@@ -36,9 +36,17 @@ class LoginController extends Controller
             ]);
         }
 
-        $request->session()->regenerate();
+       $request->session()->regenerate();
 
-        return redirect()->intended('/dashboard');
+       if (!Auth::user()->hasVerifiedEmail()) {
+            Auth::logout();
+
+        return back()->withErrors([
+            'email' => 'Please verify your email first.',
+        ]);
+    }
+
+return redirect()->intended('/dashboard');
     }
 
     public function logout(Request $request)

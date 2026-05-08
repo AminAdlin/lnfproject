@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -18,6 +19,10 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
+Route::get('/register/notice', function () {
+    return view('auth.register-notice');
+})->middleware('auth')->name('register.notice');
+
 Route::post('/register', [RegisterController::class, 'register']);
 
 // LOGIN
@@ -33,22 +38,21 @@ Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink
 Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword'])->name('password.update');
 
-// EMAIL VERIFICATION
-Route::get('/email/verify', function () {
-    return view('auth.verify-email');
-})->middleware('auth')->name('verification.notice');
+Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
 
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $user = Auth::user();
+    $user = \App\Models\User::findOrFail($id);
 
-    if ($user->hasVerifiedEmail()) {
-        return redirect('/choose-role');
+    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        abort(403);
     }
 
-    $user->markEmailAsVerified();
+    if (!$user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+    }
 
-    return redirect('/login');
-})->middleware(['signed'])->name('verification.verify');
+    return view('auth.verified-success');
+
+})->middleware('signed')->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
     if ($request->user()) {
@@ -60,7 +64,7 @@ Route::post('/email/verification-notification', function (Request $request) {
 
 // DASHBOARD
 Route::get('/dashboard', function () {
-    return redirect('/dashboard');
+    return view('/dashboard');
 })->middleware('auth');
 
 Route::get('/claimant/dashboard', function () {

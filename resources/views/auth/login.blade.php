@@ -17,10 +17,10 @@
         </div>
 
         {{-- Session Status --}}
-        @if (session('status'))
-            <div class="mb-4 text-sm text-green-600 bg-green-100 p-3 rounded-lg">
-                {{ session('status') }}
-            </div>
+        @if(session('status'))
+            <script>
+                alert("{{ session('status') }}");
+            </script>
         @endif
 
         {{-- Error Messages --}}
