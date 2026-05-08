@@ -71,3 +71,6 @@ Route::get('/claimant/dashboard', function () {
 Route::get('/finder/dashboard', function () {
     return view('finder.dashboard');
 })->middleware('auth');
+
+Route::get('/register', fn() => view('auth.register'))->name('register');
+Route::post('/register', [RegisterController::class, 'register']);
