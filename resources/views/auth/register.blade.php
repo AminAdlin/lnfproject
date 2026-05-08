@@ -62,6 +62,108 @@
             box-shadow: 0 0 0 0.2rem rgba(128, 0, 0, 0.25);
         }
     </style>
+    <style>
+        .popup {
+            position: fixed;
+            inset: 0;
+            background: rgba(30,0,0,0.6);
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+        .popup-box {
+            width: 90%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: popIn 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .popup-header {
+            background: linear-gradient(135deg, #9c2d2d, #551616);
+            padding: 18px;
+            text-align: center;
+        }
+
+        .popup-header h2 {
+            color: white;
+            margin: 0;
+            font-size: 20px;
+            letter-spacing: 2px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+        }
+
+/* BODY */
+        .popup-body {
+            padding: 25px;
+            text-align: center;
+        }
+
+        .popup-body p {
+            font-size: 18px;
+            font-weight: 600;
+            color: #5e1c1c;
+            margin-bottom: 10px;
+        }
+
+        .popup-body small {
+            color: #555;
+            font-size: 14px;
+        }
+
+/* FOOTER */
+        .popup-footer {
+            padding: 0 25px 25px;
+            text-align: center;
+        }
+
+        .popup-footer button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: #600808;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .popup-footer button:hover {
+            background: #4b0000;
+        }
+
+/* ANIMATION */
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+/* RESPONSIVE */
+        @media (max-width: 480px) {
+            .popup-body p {
+                font-size: 16px;
+            }
+
+            .popup-header h2 {
+                font-size: 18px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -94,6 +196,31 @@
             </div>
         @endif
 
+        @if (session('status') == 'verification-sent')
+        <div id="popup" class="popup">
+
+            <div class="popup-box">
+
+                <!-- Header -->
+                <div class="popup-header">
+                    <h2>UTMFoundIt</h2>
+                </div>
+
+                <!-- Body -->
+                <div class="popup-body">
+                    <p>Email Verification Sent</p>
+                    <small>Please check your email inbox to verify your account.</small>
+                </div>
+
+                <!-- Button -->
+                <div class="popup-footer">
+                    <button onclick="goLogin()">OK</button>
+                </div>
+
+            </div>
+        </div>
+        @endif
+
         <form method="POST" action="{{ url('/register') }}">
             @csrf
 
@@ -123,6 +250,16 @@
 
     </div>
 </div>
+
+<script>
+function closePopup() {
+    document.getElementById('popup').style.display = 'none';
+}
+
+function goLogin() {
+    window.location.href = "/login";
+}
+</script>
 
 </body>
 </html>

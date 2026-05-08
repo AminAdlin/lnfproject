@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
 
-class AuthController extends Controller
+class RegisterController extends Controller
 {
     public function register(Request $request)
     {
@@ -44,34 +45,6 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect('/email/verify');
+        return redirect('/register')->with('status', 'verification-sent');
     }
-
-    public function login(Request $request)
-    {
-        $credentials = $request->only('email', 'password');
-
-        if (Auth::attempt($credentials)) {
-
-            $user = Auth::user();
-
-            
-
-            // 3. redirect to dashboard
-            return redirect($this->redirectToDashboard($user->role));
-        }
-
-        return back()->withErrors([
-            'email' => 'Invalid login credentials'
-        ]);
-    }
-
-    private function redirectToDashboard($role)
-{
-    if ($role === 'claimant') {
-        return '/claimant/dashboard';
-    }
-
-    return '/finder/dashboard';
-}
 }

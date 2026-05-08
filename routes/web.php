@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use App\Http\Controllers\RoleController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 Route::get('/', function () {
@@ -15,12 +16,14 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
-Route::post('/register', [App\Http\Controllers\AuthController::class, 'register']);
+Route::post('/register', [RegisterController::class, 'register']);
 
 // LOGIN VIEW (if you use blade login page)
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
+
+Route::post('/login', [LoginController::class, 'login']);
 
 // Show verify page
 Route::get('/email/verify', function () {
@@ -38,7 +41,7 @@ Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $requ
 
     $user->markEmailAsVerified();
 
-    return redirect('/choose-role');
+    return redirect('/login');
 
 })->middleware(['signed'])->name('verification.verify');
 
@@ -50,13 +53,6 @@ Route::post('/email/verification-notification', function (Illuminate\Http\Reques
     return back()->with('message', 'Verification link sent!');
 })->middleware(['auth'])->name('verification.send');
 
-Route::middleware('auth')->group(function () {
-
-    Route::get('/choose-role', [RoleController::class, 'showChooseRole']);
-
-    Route::post('/choose-role', [RoleController::class, 'saveRole']);
-});
-
 Route::get('/dashboard', function () {
 
     $user = auth()->user();
@@ -64,16 +60,7 @@ Route::get('/dashboard', function () {
     if (!$user) {
         return redirect('/login');
     }
-
-    if (!$user->role) {
-        return redirect('/choose-role');
-    }
-
-    if ($user->role === 'claimant') {
-        return redirect('/claimant/dashboard');
-    }
-
-    return redirect('/finder/dashboard');
+        return redirect('/dashboard');
 
 })->middleware('auth');
 
