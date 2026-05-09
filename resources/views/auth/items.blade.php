@@ -202,8 +202,8 @@
                                 </form>
                             @endif
 
-                            {{-- Delete button --}}
-                            @if(auth()->id() === $item->user_id && $item->status !== 'returned')
+                            {{-- Delete button — show for all own posts --}}
+                            @if(auth()->id() === $item->user_id)
                                 <form method="POST" action="/items/{{ $item->id }}">
                                     @csrf
                                     @method('DELETE')
