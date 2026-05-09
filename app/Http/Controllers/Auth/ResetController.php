@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
 
-class ResetPasswordController extends Controller
+class ResetController extends Controller
 {
     public function showResetForm(Request $request, $token)
     {

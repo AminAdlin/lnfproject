@@ -36,6 +36,13 @@ class LoginController extends Controller
             ]);
         }
 
+        if (!Auth::user()->hasVerifiedEmail()) {
+            Auth::logout();
+            return back()->withErrors([
+            'email' => 'Please verify your email before login.',
+        ]);
+    }
+    
         $request->session()->regenerate();
 
         return redirect()->intended('/dashboard');

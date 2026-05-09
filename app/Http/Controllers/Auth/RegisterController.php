@@ -43,8 +43,6 @@ class RegisterController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
-
         return redirect('/register')->with('status', 'verification-sent');
     }
 }

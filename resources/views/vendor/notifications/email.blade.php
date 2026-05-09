@@ -1,81 +1,48 @@
 <x-mail::message>
 
-{{-- HEADER / LOGO --}}
-<div style="text-align:center; margin-bottom:20px;">
-<img src="{{ url('images/logo.png') }}" alt="UTMFoundIt Logo" style="width:120px;">
-
-<h1 style="color:#800000; font-family:Arial, sans-serif; margin-top:10px;">
-UTMFoundIt
-</h1>
-
-<p style="color:#666; font-size:14px;">
-Lost & Found System
+{{-- LOGO --}}
+<p style="text-align:center;">
+    <img src="{{ url('images/UTMFOUNDIT.png') }}"
+        alt="UTMFoundIt Logo"
+        style="width:80px;">
 </p>
-</div>
+
+# UTMFoundIt
+
+**Lost & Found System**
 
 ---
 
-{{-- GREETING --}}
-@if (! empty($greeting))
-# <span style="color:#800000;">{{ $greeting }}</span>
-@else
-@if ($level === 'error')
-# Whoops!
-@else
-# Hello!
-@endif
-@endif
+## Hello 👋
+
+Thank you for registering with **UTMFoundIt**.
+
+Please verify your email address to activate your account.
 
 ---
 
-{{-- INTRO LINES --}}
-@foreach ($introLines as $line)
-{{ $line }}
-
-@endforeach
-
----
-
-{{-- ACTION BUTTON --}}
-@isset($actionText)
-<?php
-    $color = 'primary';
-?>
-
-<x-mail::button :url="$actionUrl" :color="$color">
-{{ $actionText }}
+<x-mail::button :url="$actionUrl">
+Verify Email Address
 </x-mail::button>
 
-If the button doesn’t work, copy and paste the link below:
+---
+
+If the button doesn’t work, copy and paste this link:
 
 {{ $displayableActionUrl }}
 
-@endisset
+---
+
+If you did not create this account, you can safely ignore this email.
 
 ---
 
-{{-- OUTRO LINES --}}
-@foreach ($outroLines as $line)
-{{ $line }}
-
-@endforeach
+Regards,  
+**UTMFoundIt Team**
 
 ---
 
-{{-- SALUTATION --}}
-@if (! empty($salutation))
-{{ $salutation }}
-@else
-Regards,<br>
-<strong style="color:#800000;">UTMFoundIt Team</strong>
-@endif
-
----
-
-{{-- FOOTER --}}
-<hr style="margin-top:25px; border:none; border-top:1px solid #eee;">
-
-<p style="font-size:11px; color:#999; text-align:center;">
+<p style="text-align:center; font-size:11px; color:#999;">
 © {{ date('Y') }} UTMFoundIt. All rights reserved.
 </p>
 
