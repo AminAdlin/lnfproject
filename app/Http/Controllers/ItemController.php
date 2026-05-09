@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Item;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ItemController extends Controller
@@ -50,7 +51,7 @@ class ItemController extends Controller
             'security_answer'   => bcrypt($request->security_answer),
         ]);
 
-        return redirect('/dashboard')->with('status', 'Found item posted successfully!');
+        return redirect('/items')->with('status', 'Found item posted successfully!');
     }
 
     // Show Report Lost Item form
@@ -90,27 +91,30 @@ class ItemController extends Controller
             'status'        => 'active',
         ]);
 
-        return redirect('/dashboard')->with('status', 'Lost item reported successfully!');
+        return redirect('/items')->with('status', 'Lost item reported successfully!');
     }
 
-    // Show Found Items Page
-    public function foundPage()
+    // Show All Items Page
+    public function allItems(Request $request)
     {
-        $items = Item::where('type', 'found')
-                     ->orderBy('created_at', 'desc')
-                     ->get();
+        $query = Item::with('user')->orderBy('created_at', 'desc');
 
-        return view('auth.found-page', compact('items'));
-    }
+        if ($request->type) {
+            $query->where('type', $request->type);
+        }
 
-    // Show Lost Items Page
-    public function lostPage()
-    {
-        $items = Item::where('type', 'lost')
-                     ->orderBy('created_at', 'desc')
-                     ->get();
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%')
+                  ->orWhere('location', 'like', '%' . $request->search . '%')
+                  ->orWhere('category', 'like', '%' . $request->search . '%')
+                  ->orWhere('description', 'like', '%' . $request->search . '%');
+            });
+        }
 
-        return view('auth.lost-page', compact('items'));
+        $items = $query->get();
+
+        return view('auth.items', compact('items'));
     }
 
     // Mark item as Returned
@@ -125,5 +129,23 @@ class ItemController extends Controller
         $item->update(['status' => 'returned']);
 
         return back()->with('status', 'Item marked as returned successfully!');
+    }
+
+    // Delete own item
+    public function deleteItem($id)
+    {
+        $item = Item::findOrFail($id);
+
+        if ($item->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        if ($item->image) {
+            Storage::disk('public')->delete($item->image);
+        }
+
+        $item->delete();
+
+        return redirect('/items')->with('status', 'Post deleted successfully!');
     }
 }

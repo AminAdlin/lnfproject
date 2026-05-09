@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ClaimController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 Route::get('/', function () {
@@ -58,12 +59,12 @@ Route::post('/email/verification-notification', function (Request $request) {
 
 // DASHBOARD
 Route::get('/dashboard', function () {
-    return view('auth.dashboard', [
-        'totalLost' => 0,
-        'totalFound' => 0,
-        'totalClaimed' => 0,
-        'recentItems' => collect([]),
-    ]);
+    $totalLost    = \App\Models\Item::where('type', 'lost')->where('status', 'active')->count();
+    $totalFound   = \App\Models\Item::where('type', 'found')->where('status', 'active')->count();
+    $totalClaimed = \App\Models\Item::where('status', 'claimed')->orWhere('status', 'returned')->count();
+    $recentItems  = \App\Models\Item::with('user')->orderBy('created_at', 'desc')->take(5)->get();
+
+    return view('auth.dashboard', compact('totalLost', 'totalFound', 'totalClaimed', 'recentItems'));
 })->middleware('auth');
 
 // FOUND ITEM
@@ -74,9 +75,16 @@ Route::post('/post-found', [ItemController::class, 'storeFound'])->middleware('a
 Route::get('/report-lost', [ItemController::class, 'showReportLostForm'])->middleware('auth');
 Route::post('/report-lost', [ItemController::class, 'storeLost'])->middleware('auth');
 
-// FOUND PAGE & MARK RETURNED
-Route::get('/found-items', [ItemController::class, 'foundPage'])->middleware('auth');
+// ALL ITEMS PAGE
+Route::get('/items', [ItemController::class, 'allItems'])->middleware('auth');
+
+// MARK AS RETURNED
 Route::post('/items/{id}/returned', [ItemController::class, 'markReturned'])->middleware('auth');
 
-// LOST PAGE
-Route::get('/lost-items', [ItemController::class, 'lostPage'])->middleware('auth');
+// DELETE ITEM
+Route::delete('/items/{id}', [ItemController::class, 'deleteItem'])->middleware('auth');
+
+// CLAIM
+Route::get('/items/{id}/claim', [ClaimController::class, 'showClaimForm'])->middleware('auth');
+Route::post('/items/{id}/claim', [ClaimController::class, 'submitClaim'])->middleware('auth');
+Route::get('/my-claims', [ClaimController::class, 'myClaims'])->middleware('auth');
