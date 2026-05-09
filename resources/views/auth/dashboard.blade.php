@@ -37,6 +37,17 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
+            <a href="/notifications" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition relative">
+                🔔
+                @if($unreadCount > 0)
+                    <span class="absolute -top-1 -right-1 bg-white text-red-800 text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                        {{ $unreadCount }}
+                    </span>
+                @endif
+            </a>
+            <a href="/my-claims" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
+                🔐 My Claims
+            </a>
             <div class="glass rounded-full px-4 py-1.5 text-sm">
                 👤 {{ auth()->user()->name }}
             </div>

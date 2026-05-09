@@ -37,6 +37,9 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
+            <a href="/my-claims" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
+                🔐 My Claims
+            </a>
             <a href="/dashboard" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
                 🏠 Dashboard
             </a>
@@ -86,8 +89,6 @@
         {{-- Filter & Search --}}
         <div class="bg-white rounded-2xl shadow p-5 mb-8 border border-red-50">
             <div class="flex flex-col md:flex-row gap-4 items-center">
-
-                {{-- Filter Tabs --}}
                 <div class="flex gap-2 bg-gray-100 rounded-xl p-1">
                     <a href="/items"
                         class="px-5 py-2 rounded-lg text-sm font-semibold transition {{ request('type') == null ? 'bg-red-800 text-white shadow' : 'text-gray-500 hover:text-red-800' }}">
@@ -103,7 +104,6 @@
                     </a>
                 </div>
 
-                {{-- Search --}}
                 <form method="GET" action="/items" class="flex-1 flex gap-2">
                     @if(request('type'))
                         <input type="hidden" name="type" value="{{ request('type') }}">
@@ -116,7 +116,6 @@
                         Search
                     </button>
                 </form>
-
             </div>
         </div>
 
@@ -126,7 +125,6 @@
                 @foreach($items as $item)
                     <div class="card-hover bg-white rounded-2xl shadow border border-red-50 overflow-hidden">
 
-                        {{-- Image --}}
                         @if($item->image)
                             <img src="{{ asset('storage/' . $item->image) }}"
                                 alt="{{ $item->title }}"
@@ -139,7 +137,6 @@
 
                         <div class="p-5">
 
-                            {{-- Title & Badge --}}
                             <div class="flex justify-between items-start mb-3">
                                 <h3 class="font-bold text-gray-800 text-lg leading-tight">{{ $item->title }}</h3>
                                 @if($item->type === 'lost')
@@ -149,7 +146,6 @@
                                 @endif
                             </div>
 
-                            {{-- Details --}}
                             <div class="space-y-1.5 mb-4">
                                 <p class="text-xs text-gray-500 flex items-center gap-1.5">
                                     <span class="bg-gray-100 rounded px-1.5 py-0.5">📂</span> {{ $item->category }}
@@ -168,47 +164,55 @@
                                 </p>
                             </div>
 
-                            {{-- Description --}}
                             <p class="text-sm text-gray-600 mb-4 leading-relaxed">{{ Str::limit($item->description, 80) }}</p>
 
-                            {{-- Status / Actions --}}
+                            {{-- I Found This button --}}
+                            @if($item->type === 'lost' && auth()->id() !== $item->user_id && $item->status === 'active')
+                                <a href="/items/{{ $item->id }}/found-this"
+                                    class="block w-full text-center bg-red-800 hover:bg-red-900 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition mb-2">
+                                    🙋 I Found This!
+                                </a>
+                            @endif
+
+                            {{-- Claim button --}}
+                            @if($item->type === 'found' && auth()->id() !== $item->user_id && $item->status === 'active')
+                                <a href="/items/{{ $item->id }}/claim"
+                                    class="block w-full text-center bg-red-800 hover:bg-red-900 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition mb-2">
+                                    🔐 Claim This Item
+                                </a>
+                            @endif
+
+                            {{-- Status --}}
                             @if($item->status === 'returned')
-                                <div class="w-full text-center text-sm text-gray-400 py-2.5 bg-gray-50 rounded-xl border border-gray-100">
+                                <div class="w-full text-center text-sm text-gray-400 py-2.5 bg-gray-50 rounded-xl border border-gray-100 mb-2">
                                     ✅ Case Closed
                                 </div>
-                            @else
+                            @elseif($item->status === 'claimed')
+                                <div class="w-full text-center text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2">
+                                    ⏳ Claimed — Pending Review
+                                </div>
+                            @elseif($item->type === 'found' && auth()->id() === $item->user_id && $item->status === 'active')
+                                <form method="POST" action="/items/{{ $item->id }}/returned">
+                                    @csrf
+                                    <button type="submit"
+                                        onclick="return confirm('Mark this item as returned? This will close the case.')"
+                                        class="w-full bg-red-800 hover:bg-red-900 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition mb-2">
+                                        ✅ Mark as Returned
+                                    </button>
+                                </form>
+                            @endif
 
-                                {{-- Claim button — only for found items, not own posts, not already claimed --}}
-                                @if($item->type === 'found' && auth()->id() !== $item->user_id && $item->status === 'active')
-                                    <a href="/items/{{ $item->id }}/claim"
-                                        class="block w-full text-center bg-red-800 hover:bg-red-900 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition mb-2">
-                                        🔐 Claim This Item
-                                    </a>
-                                @endif
-
-                                @if($item->type === 'found' && auth()->id() === $item->user_id && $item->status === 'active')
-                                    <form method="POST" action="/items/{{ $item->id }}/returned">
-                                        @csrf
-                                        <button type="submit"
-                                            onclick="return confirm('Mark this item as returned? This will close the case.')"
-                                            class="w-full bg-red-800 hover:bg-red-900 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition mb-2">
-                                            ✅ Mark as Returned
-                                        </button>
-                                    </form>
-                                @endif
-
-                                @if(auth()->id() === $item->user_id)
-                                    <form method="POST" action="/items/{{ $item->id }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            onclick="return confirm('Are you sure you want to delete this post?')"
-                                            class="w-full bg-gray-50 hover:bg-red-50 text-red-800 border border-gray-200 hover:border-red-200 text-sm font-semibold py-2.5 px-4 rounded-xl transition mt-2">
-                                            🗑️ Delete Post
-                                        </button>
-                                    </form>
-                                @endif
-
+                            {{-- Delete button --}}
+                            @if(auth()->id() === $item->user_id && $item->status !== 'returned')
+                                <form method="POST" action="/items/{{ $item->id }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        onclick="return confirm('Are you sure you want to delete this post?')"
+                                        class="w-full bg-gray-50 hover:bg-red-50 text-red-800 border border-gray-200 hover:border-red-200 text-sm font-semibold py-2.5 px-4 rounded-xl transition mt-2">
+                                        🗑️ Delete Post
+                                    </button>
+                                </form>
                             @endif
 
                         </div>

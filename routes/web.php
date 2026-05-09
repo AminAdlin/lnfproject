@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ClaimController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 Route::get('/', function () {
@@ -63,8 +64,9 @@ Route::get('/dashboard', function () {
     $totalFound   = \App\Models\Item::where('type', 'found')->where('status', 'active')->count();
     $totalClaimed = \App\Models\Item::where('status', 'claimed')->orWhere('status', 'returned')->count();
     $recentItems  = \App\Models\Item::with('user')->orderBy('created_at', 'desc')->take(5)->get();
+    $unreadCount  = \App\Models\Notification::where('receiver_id', auth()->id())->where('is_read', false)->count();
 
-    return view('auth.dashboard', compact('totalLost', 'totalFound', 'totalClaimed', 'recentItems'));
+    return view('auth.dashboard', compact('totalLost', 'totalFound', 'totalClaimed', 'recentItems', 'unreadCount'));
 })->middleware('auth');
 
 // FOUND ITEM
@@ -88,3 +90,8 @@ Route::delete('/items/{id}', [ItemController::class, 'deleteItem'])->middleware(
 Route::get('/items/{id}/claim', [ClaimController::class, 'showClaimForm'])->middleware('auth');
 Route::post('/items/{id}/claim', [ClaimController::class, 'submitClaim'])->middleware('auth');
 Route::get('/my-claims', [ClaimController::class, 'myClaims'])->middleware('auth');
+
+// I FOUND THIS
+Route::get('/items/{id}/found-this', [NotificationController::class, 'showFoundThisForm'])->middleware('auth');
+Route::post('/items/{id}/found-this', [NotificationController::class, 'submitFoundThis'])->middleware('auth');
+Route::get('/notifications', [NotificationController::class, 'myNotifications'])->middleware('auth');
