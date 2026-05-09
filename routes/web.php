@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\ItemController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 Route::get('/', function () {
@@ -64,3 +65,18 @@ Route::get('/dashboard', function () {
         'recentItems' => collect([]),
     ]);
 })->middleware('auth');
+
+// FOUND ITEM
+Route::get('/post-found', [ItemController::class, 'showPostFoundForm'])->middleware('auth');
+Route::post('/post-found', [ItemController::class, 'storeFound'])->middleware('auth');
+
+// LOST ITEM
+Route::get('/report-lost', [ItemController::class, 'showReportLostForm'])->middleware('auth');
+Route::post('/report-lost', [ItemController::class, 'storeLost'])->middleware('auth');
+
+// FOUND PAGE & MARK RETURNED
+Route::get('/found-items', [ItemController::class, 'foundPage'])->middleware('auth');
+Route::post('/items/{id}/returned', [ItemController::class, 'markReturned'])->middleware('auth');
+
+// LOST PAGE
+Route::get('/lost-items', [ItemController::class, 'lostPage'])->middleware('auth');
