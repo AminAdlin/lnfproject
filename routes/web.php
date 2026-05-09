@@ -17,15 +17,16 @@ Route::get('/', function () {
 Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
-
 Route::post('/register', [RegisterController::class, 'register']);
 
 // LOGIN
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
-
 Route::post('/login', [LoginController::class, 'login']);
+
+// LOGOUT
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // FORGOT PASSWORD
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
@@ -40,33 +41,26 @@ Route::get('/email/verify', function () {
 
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $user = Auth::user();
-
     if ($user->hasVerifiedEmail()) {
-        return redirect('/choose-role');
+        return redirect('/dashboard');
     }
-
     $user->markEmailAsVerified();
-
-    return redirect('/login');
+    return redirect('/dashboard');
 })->middleware(['signed'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
     if ($request->user()) {
         $request->user()->sendEmailVerificationNotification();
     }
-
     return back()->with('message', 'Verification link sent!');
 })->middleware(['auth'])->name('verification.send');
 
 // DASHBOARD
 Route::get('/dashboard', function () {
-    return redirect('/dashboard');
-})->middleware('auth');
-
-Route::get('/claimant/dashboard', function () {
-    return view('claimant.dashboard');
-})->middleware('auth');
-
-Route::get('/finder/dashboard', function () {
-    return view('finder.dashboard');
+    return view('auth.dashboard', [
+        'totalLost' => 0,
+        'totalFound' => 0,
+        'totalClaimed' => 0,
+        'recentItems' => collect([]),
+    ]);
 })->middleware('auth');
