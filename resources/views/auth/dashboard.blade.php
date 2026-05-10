@@ -37,6 +37,7 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
+            {{-- Notifications --}}
             <a href="/notifications" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition relative">
                 🔔
                 @if($unreadCount > 0)
@@ -45,12 +46,24 @@
                     </span>
                 @endif
             </a>
+
+            {{-- My Claims --}}
             <a href="/my-claims" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
                 🔐 My Claims
             </a>
-            <div class="glass rounded-full px-4 py-1.5 text-sm">
-                👤 {{ auth()->user()->name }}
-            </div>
+
+            {{-- Profile with photo and name --}}
+            <a href="/profile" class="flex items-center gap-2 glass rounded-full px-3 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
+                @if(auth()->user()->profile_photo)
+                    <img src="{{ asset('storage/' . auth()->user()->profile_photo) }}"
+                        class="w-6 h-6 rounded-full object-cover border border-white" />
+                @else
+                    👤
+                @endif
+                {{ auth()->user()->name }}
+            </a>
+
+            {{-- Logout --}}
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="bg-white text-red-800 text-sm px-4 py-1.5 rounded-full font-semibold hover:bg-red-50 transition shadow">
@@ -72,10 +85,20 @@
         <div class="gradient-bg text-white rounded-3xl p-8 mb-8 shadow-xl relative overflow-hidden">
             <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-y-20 translate-x-20"></div>
             <div class="absolute bottom-0 left-0 w-40 h-40 bg-white opacity-5 rounded-full translate-y-10 -translate-x-10"></div>
-            <div class="relative z-10">
-                <p class="text-red-200 text-sm font-medium mb-1">{{ now()->format('l, d F Y') }}</p>
-                <h2 class="text-3xl font-bold mb-2">Welcome back, {{ auth()->user()->name }}! 👋</h2>
-                <p class="text-red-200 text-sm">Stay updated on the latest lost and found activities at UTM.</p>
+            <div class="relative z-10 flex items-center gap-5">
+                @if(auth()->user()->profile_photo)
+                    <img src="{{ asset('storage/' . auth()->user()->profile_photo) }}"
+                        class="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg" />
+                @else
+                    <div class="w-16 h-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-2xl border-4 border-white shadow-lg">
+                        👤
+                    </div>
+                @endif
+                <div>
+                    <p class="text-red-200 text-sm font-medium mb-1">{{ now()->format('l, d F Y') }}</p>
+                    <h2 class="text-3xl font-bold mb-1">Welcome back, {{ auth()->user()->name }}! 👋</h2>
+                    <p class="text-red-200 text-sm">Stay updated on the latest lost and found activities at UTM.</p>
+                </div>
             </div>
         </div>
 

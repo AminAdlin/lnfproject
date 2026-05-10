@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Item;
 use App\Models\Claim;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ClaimNotificationMail;
 
 class ClaimController extends Controller
 {
@@ -14,22 +16,18 @@ class ClaimController extends Controller
     {
         $item = Item::findOrFail($id);
 
-        // Only found items can be claimed
         if ($item->type !== 'found') {
             return back()->with('error', 'This item cannot be claimed.');
         }
 
-        // Cannot claim own item
         if ($item->user_id === auth()->id()) {
             return back()->with('error', 'You cannot claim your own post.');
         }
 
-        // Cannot claim already returned item
         if ($item->status === 'returned') {
             return back()->with('error', 'This item has already been returned.');
         }
 
-        // Check if already claimed by this user
         $existingClaim = Claim::where('item_id', $id)
                               ->where('user_id', auth()->id())
                               ->first();
@@ -44,7 +42,7 @@ class ClaimController extends Controller
     // Submit claim
     public function submitClaim(Request $request, $id)
     {
-        $item = Item::findOrFail($id);
+        $item = Item::with('user')->findOrFail($id);
 
         $request->validate([
             'answer'          => 'required|string',
@@ -59,7 +57,7 @@ class ClaimController extends Controller
         }
 
         // Create claim
-        Claim::create([
+        $claim = Claim::create([
             'item_id'         => $item->id,
             'user_id'         => auth()->id(),
             'answer'          => $request->answer,
@@ -67,10 +65,17 @@ class ClaimController extends Controller
             'status'          => 'pending',
         ]);
 
-        // Update item status to claimed
+        // Update item status
         $item->update(['status' => 'claimed']);
 
-        return redirect('/items')->with('status', 'Claim submitted successfully! The finder will be notified.');
+        // Send email to finder
+        try {
+            Mail::to($item->user->email)->send(new ClaimNotificationMail($claim->load('item.user', 'user')));
+        } catch (\Exception $e) {
+            // Email failed but claim still submitted
+        }
+
+        return redirect('/items')->with('status', 'Claim submitted successfully! The finder has been notified.');
     }
 
     // My claims page

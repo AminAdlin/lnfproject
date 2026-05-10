@@ -3,14 +3,14 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use App\Models\User;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 Route::get('/', function () {
@@ -35,29 +35,22 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // FORGOT PASSWORD
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
-Route::get('/reset-password/{token}', [ResetController::class, 'showResetForm'])->name('password.reset');
-Route::post('/reset-password', [ResetController::class, 'resetPassword'])->name('password.update');
+Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword'])->name('password.update');
 
 // EMAIL VERIFICATION
 Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
 
-Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
-
-    $user = User::findOrFail($id);
-
-    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-        abort(403);
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $user = Auth::user();
+    if ($user->hasVerifiedEmail()) {
+        return redirect('/dashboard');
     }
-
-    if (! $user->hasVerifiedEmail()) {
-        $user->markEmailAsVerified();
-    }
-
-    return view('auth.verified-success');
-
-})->middleware('signed')->name('verification.verify');
+    $user->markEmailAsVerified();
+    return redirect('/dashboard');
+})->middleware(['signed'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
     if ($request->user()) {
@@ -103,3 +96,8 @@ Route::get('/my-claims', [ClaimController::class, 'myClaims'])->middleware('auth
 Route::get('/items/{id}/found-this', [NotificationController::class, 'showFoundThisForm'])->middleware('auth');
 Route::post('/items/{id}/found-this', [NotificationController::class, 'submitFoundThis'])->middleware('auth');
 Route::get('/notifications', [NotificationController::class, 'myNotifications'])->middleware('auth');
+
+// PROFILE
+Route::get('/profile', [ProfileController::class, 'showProfile'])->middleware('auth');
+Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->middleware('auth');
+Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->middleware('auth');

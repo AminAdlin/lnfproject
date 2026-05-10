@@ -61,6 +61,16 @@
             border-color: #963636;
             box-shadow: 0 0 0 0.2rem rgba(128, 0, 0, 0.25);
         }
+
+        .btn-outline-secondary {
+            border-color: #ced4da;
+            color: #6c757d;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: #f8f9fa;
+            color: #333;
+        }
     </style>
 </head>
 
@@ -102,15 +112,19 @@
             </div>
 
             <div class="mb-3">
-                <input type="password" name="password" class="form-control"
-                       placeholder="Password" required>
+                <div class="input-group">
+                    <input type="password" name="password" id="password" class="form-control"
+                           placeholder="Password" required>
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
+                        👁
+                    </button>
+                </div>
             </div>
 
             <div class="d-flex justify-content-between mb-3">
                 <div>
                     <input type="checkbox" name="remember"> Remember me
                 </div>
-
                 <a href="{{ route('password.request') }}" style="color:#800000; text-decoration:none;">
                     Forgot password?
                 </a>
@@ -120,12 +134,22 @@
         </form>
 
         <p class="text-center mt-3">
-            Don’t have an account?
+            Don't have an account?
             <a href="/register" style="color:#800000; font-weight:500;">Register</a>
         </p>
 
     </div>
 </div>
+
+<script>
+    function togglePassword() {
+        const input = document.getElementById('password');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+</script>
+
+</body>
+</html>
 
 </body>
 </html>

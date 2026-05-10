@@ -17,6 +17,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
+        'profile_photo',
+        'student_id',
     ];
 
     protected $hidden = [
@@ -28,7 +30,17 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
         ];
+    }
+
+    public function items()
+    {
+        return $this->hasMany(\App\Models\Item::class);
+    }
+
+    public function claims()
+    {
+        return $this->hasMany(\App\Models\Claim::class);
     }
 }
