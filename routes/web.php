@@ -43,14 +43,23 @@ Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
 
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $user = Auth::user();
-    if ($user->hasVerifiedEmail()) {
-        return redirect('/dashboard');
+Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
+    $user = \App\Models\User::findOrFail($id);
+    
+    // Verify hash
+    if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        abort(403);
     }
-    $user->markEmailAsVerified();
-    return redirect('/dashboard');
-})->middleware(['signed'])->name('verification.verify');
+
+    // Mark email verified
+    if (! $user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+    }
+
+    // SHOW SUCCESS PAGE
+    return view('auth.verified-success');
+
+})->middleware('signed')->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
     if ($request->user()) {
