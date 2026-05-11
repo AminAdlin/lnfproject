@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\ResetController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\NotificationController;
@@ -35,8 +35,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // FORGOT PASSWORD
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
-Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
-Route::post('/reset-password', [ResetPasswordController::class, 'resetPassword'])->name('password.update');
+Route::get('/reset-password/{token}', [ResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [ResetController::class, 'resetPassword'])->name('password.update');
 
 // EMAIL VERIFICATION
 Route::get('/email/verify', function () {
@@ -60,6 +60,10 @@ Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
     return view('auth.verified-success');
 
 })->middleware('signed')->name('verification.verify');
+
+Route::get('/email/verified-success', function () {
+    return view('auth.verified-success');
+})->middleware('auth');
 
 Route::post('/email/verification-notification', function (Request $request) {
     if ($request->user()) {

@@ -233,11 +233,21 @@
             </div>
 
             <div class="mb-3">
-                <input type="password" name="password" class="form-control" placeholder="Password" required>
+                <div class="input-group">
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password')">
+                        👁
+                    </button>
+                </div>
             </div>
 
             <div class="mb-3">
-                <input type="password" name="password_confirmation" class="form-control" placeholder="Confirm Password" required>
+                <div class="input-group">
+                    <input type="password" name="password_confirmation" id="password_confirmation" class="form-control" placeholder="Confirm Password" required>
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password_confirmation')">
+                        👁
+                    </button>
+                </div>
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Register</button>
@@ -258,6 +268,14 @@ function closePopup() {
 
 function goLogin() {
     window.location.href = "/login";
+}
+</script>
+
+<script>
+function togglePassword(id) {
+    const input = document.getElementById(id);
+
+    input.type = (input.type === 'password') ? 'text' : 'password';
 }
 </script>
 

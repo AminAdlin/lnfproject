@@ -42,6 +42,7 @@ class RegisterController extends Controller
 
         event(new Registered($user));
 
-        return redirect('/login')->with('status', 'Registration successful! Please check your email to verify your account.');
+        return redirect('/register')
+            ->with('status', 'verification-sent');
     }
 }
