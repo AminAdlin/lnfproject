@@ -21,7 +21,6 @@ class RegisterController extends Controller
                 'unique:users',
                 'regex:/^[a-zA-Z0-9._%+-]+@(utm\.my|graduate\.utm\.my|utmspace\.edu\.my)$/'
             ],
-
             'password' => [
                 'required',
                 'string',
@@ -31,18 +30,18 @@ class RegisterController extends Controller
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/'
             ],
         ], [
-            'email.regex' => 'Email must be @utm.my or @graduate.utm.my',
+            'email.regex' => 'Email must be @utm.my, @graduate.utm.my or @utmspace.edu.my',
             'password.regex' => 'Password must include uppercase, lowercase, number and special character',
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
         event(new Registered($user));
 
-        return redirect('/register')->with('status', 'verification-sent');
+        return redirect('/login')->with('status', 'Registration successful! Please check your email to verify your account.');
     }
 }
