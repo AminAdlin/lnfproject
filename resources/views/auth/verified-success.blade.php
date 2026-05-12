@@ -100,6 +100,10 @@
             You can now return to login page.
         </p>
 
+        <a href="{{ route('login') }}" class="btn btn-primary">
+            Go to Login
+        </a>
+
     </div>
 
 </div>

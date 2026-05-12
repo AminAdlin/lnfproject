@@ -20,7 +20,7 @@ class NotificationController extends Controller
         }
 
         // Cannot notify own item
-        if ($item->user_id === auth()->id()) {
+        if ($item->user_id === Auth::id()) {
             return back()->with('error', 'This is your own post.');
         }
 
@@ -39,7 +39,7 @@ class NotificationController extends Controller
 
         Notification::create([
             'item_id'     => $item->id,
-            'sender_id'   => auth()->id(),
+            'sender_id'   => Auth::id(),
             'receiver_id' => $item->user_id,
             'message'     => $request->message,
             'contact'     => $request->contact,
@@ -53,12 +53,12 @@ class NotificationController extends Controller
     public function myNotifications()
     {
         $notifications = Notification::with(['item', 'sender'])
-                                     ->where('receiver_id', auth()->id())
+                                     ->where('receiver_id', Auth::id())
                                      ->orderBy('created_at', 'desc')
                                      ->get();
 
         // Mark all as read
-        Notification::where('receiver_id', auth()->id())
+        Notification::where('receiver_id', Auth::id())
                     ->where('is_read', false)
                     ->update(['is_read' => true]);
 
@@ -68,7 +68,7 @@ class NotificationController extends Controller
     // Count unread notifications
     public static function unreadCount()
     {
-        return Notification::where('receiver_id', auth()->id())
+        return Notification::where('receiver_id', Auth::id())
                            ->where('is_read', false)
                            ->count();
     }

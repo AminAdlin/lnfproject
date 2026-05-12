@@ -8,6 +8,7 @@ use App\Models\Claim;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ClaimNotificationMail;
+use App\Notifications\ClaimConfirmedNotification;
 
 class ClaimController extends Controller
 {
@@ -20,7 +21,7 @@ class ClaimController extends Controller
             return back()->with('error', 'This item cannot be claimed.');
         }
 
-        if ($item->user_id === auth()->id()) {
+        if ($item->user_id === Auth::id()) {
             return back()->with('error', 'You cannot claim your own post.');
         }
 
@@ -29,7 +30,7 @@ class ClaimController extends Controller
         }
 
         $existingClaim = Claim::where('item_id', $id)
-                              ->where('user_id', auth()->id())
+                              ->where('user_id', Auth::id())
                               ->first();
 
         if ($existingClaim) {
@@ -59,7 +60,7 @@ class ClaimController extends Controller
         // Create claim
         $claim = Claim::create([
             'item_id'         => $item->id,
-            'user_id'         => auth()->id(),
+            'user_id'         => Auth::id(),
             'answer'          => $request->answer,
             'delivery_method' => $request->delivery_method,
             'status'          => 'pending',
@@ -68,11 +69,18 @@ class ClaimController extends Controller
         // Update item status
         $item->update(['status' => 'claimed']);
 
-        // Send email to finder
+        // Send notification + email to finder
         try {
-            Mail::to($item->user->email)->send(new ClaimNotificationMail($claim->load('item.user', 'user')));
+
+            $item->user->notify(
+                new ClaimConfirmedNotification(
+                    $item->title,
+                    Auth::user()->name
+                )
+            );
+
         } catch (\Exception $e) {
-            // Email failed but claim still submitted
+            // Notification failed but claim still submitted
         }
 
         return redirect('/items')->with('status', 'Claim submitted successfully! The finder has been notified.');
@@ -82,7 +90,7 @@ class ClaimController extends Controller
     public function myClaims()
     {
         $claims = Claim::with('item')
-                       ->where('user_id', auth()->id())
+                       ->where('user_id', Auth::id())
                        ->orderBy('created_at', 'desc')
                        ->get();
 
