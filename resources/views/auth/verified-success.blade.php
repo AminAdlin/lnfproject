@@ -16,6 +16,9 @@
 
         .system-title {
             color: white;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 2px;
             text-align: center;
             margin-bottom: 25px;
             font-family: 'Montserrat', sans-serif;
@@ -27,6 +30,7 @@
             letter-spacing: 5px;
             text-transform: uppercase;
             color: white;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.4);
         }
 
         .system-title p {

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
+use App\Models\User;
 
 class ResetController extends Controller
 {
@@ -31,7 +32,13 @@ class ResetController extends Controller
                 'min:8',
                 'max:16',
                 'confirmed',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/'
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/',
+                function ($attribute, $value, $fail) use ($request) {
+                    $user = User::where('email', $request->email)->first();
+                    if ($user && Hash::check($value, $user->password)) {
+                        $fail('New password cannot be the same as your old password.');
+                    }
+                },
             ],
         ], [
             'email.regex' => 'Email must be @utm.my, @graduate.utm.my or @utmspace.edu.my',

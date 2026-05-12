@@ -12,10 +12,6 @@
     <!-- HEADER -->
     <div style="background:linear-gradient(135deg,#8b4747,#1e0101); padding:20px; text-align:center;">
 
-        <img src="{{ url('images/logo.png') }}"
-             alt="UTMFoundIt Logo"
-             style="width:70px; margin-bottom:15px;">
-
         <h1 style="color:white; margin:0; font-size:32px; letter-spacing:2px;">
             UTMFoundIt
         </h1>
