@@ -122,7 +122,7 @@ class ItemController extends Controller
     {
         $item = Item::findOrFail($id);
 
-        if ($item->user_id !== auth()->id()) {
+        if ($item->user_id !== Auth::id()) {
             return back()->with('error', 'Unauthorized action.');
         }
 
@@ -136,7 +136,7 @@ class ItemController extends Controller
     {
         $item = Item::findOrFail($id);
 
-        if ($item->user_id !== auth()->id()) {
+        if ($item->user_id !== Auth::id()) {
             return back()->with('error', 'Unauthorized action.');
         }
 

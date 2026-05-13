@@ -7,8 +7,6 @@ use App\Models\Item;
 use App\Models\Claim;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ClaimNotificationMail;
-use App\Notifications\ClaimConfirmedNotification;
 
 class ClaimController extends Controller
 {
@@ -69,19 +67,29 @@ class ClaimController extends Controller
         // Update item status
         $item->update(['status' => 'claimed']);
 
-        // Send notification + email to finder
-        try {
+        \App\Models\Notification::create([
+            'item_id'     => $item->id,
+            'sender_id'   => Auth::id(),
+            'receiver_id' => $item->user_id,
+            'message'     => Auth::user()->name . ' has claimed your item: ' . $item->title,
+            'contact'     => Auth::user()->email,
+            'is_read'     => false,
+        ]);
 
-            $item->user->notify(
-                new ClaimConfirmedNotification(
-                    $item->title,
-                    Auth::user()->name
-                )
+            Mail::send(
+                'auth.emails.claim-confirmed',
+                [
+                    'finderName'   => $item->user->name,
+                    'itemName'     => $item->title,
+                    'claimantName' => Auth::user()->name,
+                ],
+                function ($message) use ($item) {
+
+                    $message->to($item->user->email)
+                        ->subject('Item Claim Notification');
+
+                }
             );
-
-        } catch (\Exception $e) {
-            // Notification failed but claim still submitted
-        }
 
         return redirect('/items')->with('status', 'Claim submitted successfully! The finder has been notified.');
     }
