@@ -31,7 +31,6 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid rgba(127,29,29,0.08);
         }
-        .card-texture:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(127,29,29,0.15); border-color: rgba(127,29,29,0.15); }
         .glass { background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.25); }
         .nav-pill { transition: all 0.2s ease; }
         .nav-pill:hover { background: white; color: #7f1d1d; transform: scale(1.05); }
@@ -41,43 +40,63 @@
 </head>
 <body class="min-h-screen">
 
-    <nav class="navbar-texture text-white px-8 py-4 flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center gap-3">
-            <div class="bg-white rounded-2xl p-1.5 shadow-lg">
-                <img src="/images/logo.png" alt="UTM FoundIt Logo" class="h-9 w-9 object-contain">
+    {{-- Navbar --}}
+    <nav class="navbar-texture text-white sticky top-0 z-50">
+        <div class="flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+                    <img src="/images/logo.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+                    <p class="text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-wide">UTM FoundIt</h1>
-                <p class="text-red-200 text-xs tracking-wider">LOST & FOUND SYSTEM</p>
+            <div class="flex items-center gap-1.5 sm:gap-3">
+                <a href="/items" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                    📋 <span class="hidden sm:inline text-xs sm:text-sm">All Items</span>
+                </a>
+                <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                    🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
+                </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg">
+                        Logout
+                    </button>
+                </form>
             </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <a href="/items" class="nav-pill glass rounded-full px-4 py-2 text-sm flex items-center gap-1.5">📋 <span class="hidden md:inline">All Items</span></a>
-            <a href="/dashboard" class="nav-pill glass rounded-full px-4 py-2 text-sm flex items-center gap-1.5">🏠 <span class="hidden md:inline">Dashboard</span></a>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="bg-white text-red-800 text-sm px-5 py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg">Logout</button>
-            </form>
         </div>
     </nav>
 
-    <div class="max-w-6xl mx-auto px-6 py-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
+
+        {{-- Back Button --}}
+        <a href="/dashboard" class="inline-flex items-center gap-2 text-sm text-red-800 font-semibold mb-4 hover:gap-3 transition-all">
+            ← Back to Dashboard
+        </a>
 
         {{-- Banner --}}
-        <div class="banner-texture text-white rounded-3xl p-8 mb-8 shadow-2xl relative overflow-hidden">
+        <div class="banner-texture text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-y-40 translate-x-40"></div>
             <div class="absolute bottom-0 left-0 w-64 h-64 bg-white opacity-5 rounded-full translate-y-20 -translate-x-20"></div>
-            <div class="absolute top-4 left-1/2 w-2 h-2 bg-white opacity-20 rounded-full"></div>
-            <div class="absolute bottom-8 right-1/3 w-2 h-2 bg-white opacity-20 rounded-full"></div>
-            <div class="relative z-10">
-                <p class="text-red-200 text-xs font-bold uppercase tracking-widest mb-2">Claim Management</p>
-                <h2 class="text-3xl font-extrabold mb-1 drop-shadow-lg">My Claims 🔐</h2>
-                <p class="text-red-200 text-sm">Track all your item claim requests</p>
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <p class="text-red-200 text-xs font-bold uppercase tracking-widest mb-1">Claim Management</p>
+                    <h2 class="text-xl sm:text-3xl font-extrabold mb-1 drop-shadow-lg">My Claims 🔐</h2>
+                    <p class="text-red-200 text-xs sm:text-sm">Track all your item claim requests</p>
+                </div>
+                @if($claims->count() > 0)
+                    <div class="glass rounded-2xl px-4 py-2 text-center flex-shrink-0">
+                        <p class="text-xl sm:text-2xl font-extrabold">{{ $claims->count() }}</p>
+                        <p class="text-red-200 text-xs font-semibold uppercase tracking-wider">Claims</p>
+                    </div>
+                @endif
             </div>
         </div>
 
         @if (session('status'))
-            <div class="mb-6 text-sm text-green-700 bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+            <div class="mb-5 text-sm text-green-700 bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
                 <span class="text-xl">✅</span>
                 <span class="font-medium">{{ session('status') }}</span>
             </div>
@@ -88,28 +107,26 @@
         @if($claims->count() > 0)
             <div class="space-y-3">
                 @foreach($claims as $claim)
-                    <div class="claim-item card-texture rounded-2xl shadow-md p-5">
-                        <div class="flex justify-between items-start">
-                            <div class="flex gap-4">
-                                <div class="bg-gradient-to-br from-red-100 to-red-200 text-red-800 rounded-2xl p-4 text-3xl shadow-inner flex-shrink-0">📦</div>
-                                <div>
-                                    <h3 class="font-extrabold text-gray-800 text-lg">{{ $claim->item->title }}</h3>
-                                    <div class="flex items-center gap-3 mt-1 flex-wrap">
+                    <div class="claim-item card-texture rounded-2xl shadow-md p-4 sm:p-5">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="flex gap-3 sm:gap-4 min-w-0">
+                                <div class="bg-gradient-to-br from-red-100 to-red-200 text-red-800 rounded-2xl p-3 sm:p-4 text-2xl sm:text-3xl shadow-inner flex-shrink-0">📦</div>
+                                <div class="min-w-0">
+                                    <h3 class="font-extrabold text-gray-800 text-base sm:text-lg truncate">{{ $claim->item->title }}</h3>
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
                                         <p class="text-xs text-gray-400">📍 {{ $claim->item->location }}</p>
-                                        <span class="text-gray-200 text-xs">•</span>
                                         <p class="text-xs text-gray-400">📅 {{ $claim->created_at->diffForHumans() }}</p>
-                                        <span class="text-gray-200 text-xs">•</span>
                                         <p class="text-xs text-gray-400">🚚 {{ $claim->delivery_method === 'self_pickup' ? 'Self Pickup' : 'Delivery' }}</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="flex-shrink-0">
                                 @if($claim->status === 'pending')
-                                    <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-full font-bold border border-yellow-200 uppercase tracking-wider">⏳ Pending</span>
+                                    <span class="text-xs bg-yellow-100 text-yellow-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-yellow-200 uppercase tracking-wider whitespace-nowrap">⏳ Pending</span>
                                 @elseif($claim->status === 'approved')
-                                    <span class="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-full font-bold border border-green-200 uppercase tracking-wider">✅ Approved</span>
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-green-200 uppercase tracking-wider whitespace-nowrap">✅ Approved</span>
                                 @else
-                                    <span class="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-full font-bold border border-red-200 uppercase tracking-wider">❌ Rejected</span>
+                                    <span class="text-xs bg-red-100 text-red-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-red-200 uppercase tracking-wider whitespace-nowrap">❌ Rejected</span>
                                 @endif
                             </div>
                         </div>
@@ -117,12 +134,12 @@
                 @endforeach
             </div>
         @else
-            <div class="text-center py-24 card-texture rounded-2xl shadow-md">
-                <div class="w-20 h-20 bg-gradient-to-br from-red-50 to-red-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                    <span class="text-4xl">🔐</span>
+            <div class="text-center py-16 sm:py-24 card-texture rounded-2xl shadow-md">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-50 to-red-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <span class="text-3xl sm:text-4xl">🔐</span>
                 </div>
-                <p class="text-gray-600 font-bold text-lg">No claims yet</p>
-                <p class="text-gray-400 text-sm mt-1 mb-6">Browse found items and submit a claim</p>
+                <p class="text-gray-600 font-bold text-base sm:text-lg">No claims yet</p>
+                <p class="text-gray-400 text-xs sm:text-sm mt-1 mb-5 px-6">Browse found items and submit a claim</p>
                 <a href="/items" class="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-sm font-bold py-2.5 px-6 rounded-xl transition shadow-md">
                     Browse Items
                 </a>

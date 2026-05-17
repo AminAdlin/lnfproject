@@ -32,86 +32,99 @@
             border: 1px solid rgba(127,29,29,0.08);
         }
         .item-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(127,29,29,0.08); }
-        .item-card:hover { transform: translateY(-6px); box-shadow: 0 25px 50px rgba(127,29,29,0.15); border-color: rgba(127,29,29,0.2); }
+        .item-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(127,29,29,0.12); border-color: rgba(127,29,29,0.2); }
         .glass { background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.25); }
         .nav-pill { transition: all 0.2s ease; }
         .nav-pill:hover { background: white; color: #7f1d1d; transform: scale(1.05); }
-        .section-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(127,29,29,0.15), transparent); margin: 2rem 0; }
     </style>
 </head>
 <body class="min-h-screen">
 
-    <nav class="navbar-texture text-white px-8 py-4 flex justify-between items-center sticky top-0 z-50">
-        <div class="flex items-center gap-3">
-            <div class="bg-white rounded-2xl p-1.5 shadow-lg">
-                <img src="/images/logo.png" alt="UTM FoundIt Logo" class="h-9 w-9 object-contain">
+    {{-- Navbar --}}
+    <nav class="navbar-texture text-white sticky top-0 z-50">
+        <div class="flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+                    <img src="/images/logo.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+                    <p class="text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-wide">UTM FoundIt</h1>
-                <p class="text-red-200 text-xs tracking-wider">LOST & FOUND SYSTEM</p>
+            <div class="flex items-center gap-1.5 sm:gap-3">
+                <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
+                </a>
+                <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                    🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
+                </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg">
+                        Logout
+                    </button>
+                </form>
             </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <a href="/my-claims" class="nav-pill glass rounded-full px-4 py-2 text-sm flex items-center gap-1.5">🔐 <span class="hidden md:inline">My Claims</span></a>
-            <a href="/dashboard" class="nav-pill glass rounded-full px-4 py-2 text-sm flex items-center gap-1.5">🏠 <span class="hidden md:inline">Dashboard</span></a>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="bg-white text-red-800 text-sm px-5 py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg">Logout</button>
-            </form>
         </div>
     </nav>
 
-    <div class="max-w-6xl mx-auto px-6 py-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
+
+        {{-- Back Button --}}
+        <a href="/dashboard" class="inline-flex items-center gap-2 text-sm text-red-800 font-semibold mb-4 hover:gap-3 transition-all">
+            ← Back to Dashboard
+        </a>
 
         {{-- Banner --}}
-        <div class="banner-texture text-white rounded-3xl p-8 mb-8 shadow-2xl relative overflow-hidden">
+        <div class="banner-texture text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-y-40 translate-x-40"></div>
             <div class="absolute bottom-0 left-0 w-64 h-64 bg-white opacity-5 rounded-full translate-y-20 -translate-x-20"></div>
-            <div class="absolute top-4 left-1/2 w-2 h-2 bg-white opacity-20 rounded-full"></div>
-            <div class="absolute bottom-8 right-1/3 w-2 h-2 bg-white opacity-20 rounded-full"></div>
-            <div class="relative z-10 flex justify-between items-center">
+            <div class="relative z-10 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
-                    <p class="text-red-200 text-xs font-bold uppercase tracking-widest mb-2">Browse Items</p>
-                    <h2 class="text-3xl font-extrabold mb-1 drop-shadow-lg">All Items 📋</h2>
-                    <p class="text-red-200 text-sm">Browse all lost and found items at UTM</p>
+                    <p class="text-red-200 text-xs font-bold uppercase tracking-widest mb-1">Browse Items</p>
+                    <h2 class="text-xl sm:text-3xl font-extrabold mb-1 drop-shadow-lg">All Items 📋</h2>
+                    <p class="text-red-200 text-xs sm:text-sm">Browse all lost and found items at UTM</p>
                 </div>
-                <div class="flex gap-3">
-                    <a href="/report-lost" class="glass rounded-2xl px-5 py-2.5 text-sm font-bold hover:bg-white hover:text-red-800 transition">+ Report Lost</a>
-                    <a href="/post-found" class="bg-white text-red-800 rounded-2xl px-5 py-2.5 text-sm font-bold hover:bg-red-50 transition shadow-lg">+ Post Found</a>
+                <div class="flex gap-2 sm:gap-3">
+                    <a href="/report-lost" class="glass rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold hover:bg-white hover:text-red-800 transition">+ Report Lost</a>
+                    <a href="/post-found" class="bg-white text-red-800 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold hover:bg-red-50 transition shadow-lg">+ Post Found</a>
                 </div>
             </div>
         </div>
 
         @if (session('status'))
-            <div class="mb-6 text-sm text-green-700 bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+            <div class="mb-5 text-sm text-green-700 bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
                 <span class="text-xl">✅</span>
                 <span class="font-medium">{{ session('status') }}</span>
             </div>
         @endif
 
         @if (session('error'))
-            <div class="mb-6 text-sm text-red-700 bg-red-50 border border-red-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+            <div class="mb-5 text-sm text-red-700 bg-red-50 border border-red-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
                 <span class="text-xl">❌</span>
                 <span class="font-medium">{{ session('error') }}</span>
             </div>
         @endif
 
         {{-- Filter & Search --}}
-        <div class="card-texture rounded-2xl shadow-md p-5 mb-8">
-            <div class="flex flex-col md:flex-row gap-4 items-center">
-                <div class="flex gap-1 bg-gray-100 rounded-xl p-1">
-                    <a href="/items" class="px-5 py-2 rounded-lg text-sm font-bold transition {{ request('type') == null ? 'bg-gradient-to-r from-red-800 to-red-600 text-white shadow' : 'text-gray-500 hover:text-red-800' }}">All</a>
-                    <a href="/items?type=lost" class="px-5 py-2 rounded-lg text-sm font-bold transition {{ request('type') == 'lost' ? 'bg-gradient-to-r from-red-800 to-red-600 text-white shadow' : 'text-gray-500 hover:text-red-800' }}">🔴 Lost</a>
-                    <a href="/items?type=found" class="px-5 py-2 rounded-lg text-sm font-bold transition {{ request('type') == 'found' ? 'bg-gradient-to-r from-red-800 to-red-600 text-white shadow' : 'text-gray-500 hover:text-red-800' }}">🟢 Found</a>
+        <div class="card-texture rounded-2xl shadow-md p-4 sm:p-5 mb-6 sm:mb-8">
+            <div class="flex flex-col gap-3">
+                {{-- Type tabs --}}
+                <div class="flex gap-1 bg-gray-100 rounded-xl p-1 w-full sm:w-auto">
+                    <a href="/items" class="flex-1 sm:flex-none text-center px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition {{ request('type') == null ? 'bg-gradient-to-r from-red-800 to-red-600 text-white shadow' : 'text-gray-500 hover:text-red-800' }}">All</a>
+                    <a href="/items?type=lost" class="flex-1 sm:flex-none text-center px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition {{ request('type') == 'lost' ? 'bg-gradient-to-r from-red-800 to-red-600 text-white shadow' : 'text-gray-500 hover:text-red-800' }}">🔴 Lost</a>
+                    <a href="/items?type=found" class="flex-1 sm:flex-none text-center px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-bold transition {{ request('type') == 'found' ? 'bg-gradient-to-r from-red-800 to-red-600 text-white shadow' : 'text-gray-500 hover:text-red-800' }}">🟢 Found</a>
                 </div>
-                <form method="GET" action="/items" class="flex-1 flex gap-2">
+                {{-- Search --}}
+                <form method="GET" action="/items" class="flex gap-2">
                     @if(request('type'))
                         <input type="hidden" name="type" value="{{ request('type') }}">
                     @endif
                     <input type="text" name="search" value="{{ request('search') }}"
                         placeholder="🔎 Search by name, location, category..."
                         class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium" />
-                    <button type="submit" class="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-md text-sm">Search</button>
+                    <button type="submit" class="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white font-bold py-2.5 px-4 sm:px-6 rounded-xl transition shadow-md text-xs sm:text-sm whitespace-nowrap">Search</button>
                 </form>
             </div>
         </div>
@@ -119,30 +132,29 @@
         {{-- Items Grid --}}
         @if($items->count() > 0)
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">{{ $items->count() }} Items Found</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 @foreach($items as $item)
-                    <div class="item-card bg-white rounded-2xl overflow-hidden shadow-md"
-                         style="background-image: url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23991b1b\' fill-opacity=\'0.015\' fill-rule=\'evenodd\'%3E%3Cpath d=\'M0 40L40 0H20L0 20M40 40V20L20 40\'/%3E%3C/g%3E%3C/svg%3E');">
+                    <div class="item-card bg-white rounded-2xl overflow-hidden shadow-md">
 
                         @if($item->image)
-                            <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title }}" class="w-full h-48 object-cover" />
+                            <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title }}" class="w-full h-40 sm:h-48 object-cover" />
                         @else
-                            <div class="w-full h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center text-5xl">
+                            <div class="w-full h-40 sm:h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center text-5xl">
                                 {{ $item->type === 'lost' ? '📋' : '📦' }}
                             </div>
                         @endif
 
-                        <div class="p-5">
+                        <div class="p-4 sm:p-5">
                             <div class="flex justify-between items-start mb-3">
-                                <h3 class="font-extrabold text-gray-800 text-lg leading-tight">{{ $item->title }}</h3>
+                                <h3 class="font-extrabold text-gray-800 text-base sm:text-lg leading-tight truncate mr-2">{{ $item->title }}</h3>
                                 @if($item->type === 'lost')
-                                    <span class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-full font-bold border border-red-200 ml-2 shrink-0 uppercase tracking-wider">Lost</span>
+                                    <span class="text-xs bg-red-100 text-red-700 px-2 sm:px-3 py-1 rounded-full font-bold border border-red-200 flex-shrink-0 uppercase tracking-wider">Lost</span>
                                 @else
-                                    <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold border border-green-200 ml-2 shrink-0 uppercase tracking-wider">Found</span>
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 sm:px-3 py-1 rounded-full font-bold border border-green-200 flex-shrink-0 uppercase tracking-wider">Found</span>
                                 @endif
                             </div>
 
-                            <div class="space-y-1.5 mb-4">
+                            <div class="space-y-1 mb-3">
                                 <p class="text-xs text-gray-500 flex items-center gap-1.5 font-medium"><span class="bg-gray-100 rounded px-1.5 py-0.5">📂</span> {{ $item->category }}</p>
                                 <p class="text-xs text-gray-500 flex items-center gap-1.5 font-medium"><span class="bg-gray-100 rounded px-1.5 py-0.5">📍</span> {{ $item->location }}</p>
                                 <p class="text-xs text-gray-500 flex items-center gap-1.5 font-medium"><span class="bg-gray-100 rounded px-1.5 py-0.5">📅</span> {{ $item->date_reported }}</p>
@@ -150,12 +162,12 @@
                                 <p class="text-xs text-gray-500 flex items-center gap-1.5 font-medium"><span class="bg-gray-100 rounded px-1.5 py-0.5">👤</span> {{ $item->user->name }}</p>
                             </div>
 
-                            <p class="text-sm text-gray-600 mb-4 leading-relaxed">{{ Str::limit($item->description, 80) }}</p>
+                            <p class="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed">{{ Str::limit($item->description, 80) }}</p>
 
                             {{-- I Found This --}}
                             @if($item->type === 'lost' && auth()->id() !== $item->user_id && $item->status === 'active')
                                 <a href="/items/{{ $item->id }}/found-this"
-                                    class="block w-full text-center bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
+                                    class="block w-full text-center bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
                                     🙋 I Found This!
                                 </a>
                             @endif
@@ -163,22 +175,22 @@
                             {{-- Claim --}}
                             @if($item->type === 'found' && auth()->id() !== $item->user_id && $item->status === 'active')
                                 <a href="/items/{{ $item->id }}/claim"
-                                    class="block w-full text-center bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
+                                    class="block w-full text-center bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
                                     🔐 Claim This Item
                                 </a>
                             @endif
 
-                            {{-- Status --}}
+                            {{-- Status badges --}}
                             @if($item->status === 'returned')
-                                <div class="w-full text-center text-sm text-gray-400 py-2.5 bg-gray-50 rounded-xl border border-gray-100 mb-2 font-semibold">✅ Case Closed</div>
+                                <div class="w-full text-center text-xs sm:text-sm text-gray-400 py-2.5 bg-gray-50 rounded-xl border border-gray-100 mb-2 font-semibold">✅ Case Closed</div>
                             @elseif($item->status === 'claimed')
-                                <div class="w-full text-center text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">⏳ Claimed — Pending Review</div>
+                                <div class="w-full text-center text-xs sm:text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">⏳ Claimed — Pending Review</div>
                             @elseif($item->type === 'found' && auth()->id() === $item->user_id && $item->status === 'active')
                                 <form method="POST" action="/items/{{ $item->id }}/returned">
                                     @csrf
                                     <button type="submit"
                                         onclick="return confirm('Mark this item as returned? This will close the case.')"
-                                        class="w-full bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
+                                        class="w-full bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
                                         ✅ Mark as Returned
                                     </button>
                                 </form>
@@ -191,26 +203,25 @@
                                     @method('DELETE')
                                     <button type="submit"
                                         onclick="return confirm('Are you sure you want to delete this post?')"
-                                        class="w-full bg-gray-50 hover:bg-red-50 text-red-800 border border-gray-200 hover:border-red-200 text-sm font-bold py-2.5 px-4 rounded-xl transition mt-2">
+                                        class="w-full bg-gray-50 hover:bg-red-50 text-red-800 border border-gray-200 hover:border-red-200 text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mt-2">
                                         🗑️ Delete Post
                                     </button>
                                 </form>
                             @endif
-
                         </div>
                     </div>
                 @endforeach
             </div>
         @else
-            <div class="text-center py-24 card-texture rounded-2xl shadow-md">
-                <div class="w-20 h-20 bg-gradient-to-br from-red-50 to-red-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                    <span class="text-4xl">📭</span>
+            <div class="text-center py-16 sm:py-24 card-texture rounded-2xl shadow-md">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-50 to-red-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <span class="text-3xl sm:text-4xl">📭</span>
                 </div>
-                <p class="text-gray-600 font-bold text-lg">No items found</p>
-                <p class="text-gray-400 text-sm mt-1 mb-6">Try a different search or post a new item</p>
+                <p class="text-gray-600 font-bold text-base sm:text-lg">No items found</p>
+                <p class="text-gray-400 text-xs sm:text-sm mt-1 mb-5 px-6">Try a different search or post a new item</p>
                 <div class="flex justify-center gap-3">
-                    <a href="/report-lost" class="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-sm font-bold py-2.5 px-6 rounded-xl transition shadow-md">+ Report Lost</a>
-                    <a href="/post-found" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold py-2.5 px-6 rounded-xl transition border border-gray-200">+ Post Found</a>
+                    <a href="/report-lost" class="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-sm font-bold py-2.5 px-5 rounded-xl transition shadow-md">+ Report Lost</a>
+                    <a href="/post-found" class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold py-2.5 px-5 rounded-xl transition border border-gray-200">+ Post Found</a>
                 </div>
             </div>
         @endif
