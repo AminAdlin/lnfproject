@@ -36,12 +36,17 @@
             <a href="/dashboard" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
                 🏠 Dashboard
             </a>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="bg-white text-red-800 text-sm px-4 py-1.5 rounded-full font-semibold hover:bg-red-50 transition shadow">
-                    Logout
+            {{-- Logout --}}
+                <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
+                    @csrf
+                </form>
+                <button type="button" onclick="confirmLogout()" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg flex items-center gap-1.5">
+                    <span>🚪</span>
+                    <span>Logout</span>
                 </button>
-            </form>
+
+                <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         </div>
     </nav>
 
@@ -147,6 +152,24 @@
         </div>
 
     </div>
-
+<script>
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will need to login again to access your dashboard.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#800000',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logout-form').submit();
+            }
+        })
+    }
+</script>
 </body>
 </html>

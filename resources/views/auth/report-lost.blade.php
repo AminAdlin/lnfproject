@@ -40,7 +40,7 @@
         <div class="flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
             <div class="flex items-center gap-2 sm:gap-3">
                 <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
-                    <img src="/images/logo.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
+                    <img src="/images/logo_utmfoundit_crop.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
                 </div>
                 <div>
                     <h1 class="text-base sm:text-xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
@@ -51,12 +51,17 @@
                 <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}">
+                {{-- Logout --}}
+                <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
                     @csrf
-                    <button type="submit" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg">
-                        Logout
-                    </button>
                 </form>
+                <button type="button" onclick="confirmLogout()" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg flex items-center gap-1.5">
+                    <span>🚪</span>
+                    <span>Logout</span>
+                </button>
+
+                <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             </div>
         </div>
     </nav>
@@ -158,6 +163,24 @@
             </form>
         </div>
     </div>
-
+<script>
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will need to login again to access your dashboard.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#800000',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logout-form').submit();
+            }
+        })
+    }
+</script>
 </body>
 </html>

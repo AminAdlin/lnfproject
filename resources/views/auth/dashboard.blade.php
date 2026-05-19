@@ -140,8 +140,7 @@
             {{-- Logo + Brand --}}
             <div class="flex items-center gap-2 sm:gap-3">
                 <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
-                    <img src="/images/logo.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
-                </div>
+                    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">                </div>
                 <div>
                     <h1 class="brand-title text-base sm:text-xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
                     <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
@@ -162,7 +161,8 @@
 
                 {{-- My Claims --}}
                 <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
-                    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
+                    <span>🔐</span>
+                    <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
                 </a>
 
                 {{-- Profile --}}
@@ -171,18 +171,24 @@
                         <img src="{{ asset('storage/' . auth()->user()->profile_photo) }}"
                             class="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border-2 border-white" />
                     @else
-                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white bg-opacity-30 flex items-center justify-center text-xs">👤</div>
+                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white bg-opacity-30 flex items-center justify-center text-xs">
+                            <span>👤</span>
+                        </div>
                     @endif
                     <span class="hidden sm:inline font-medium text-xs sm:text-sm">{{ auth()->user()->name }}</span>
                 </a>
 
                 {{-- Logout --}}
-                <form method="POST" action="{{ route('logout') }}">
+                <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
                     @csrf
-                    <button type="submit" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg">
-                        Logout
-                    </button>
                 </form>
+                <button type="button" onclick="confirmLogout()" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg flex items-center gap-1.5">
+                    <span>🚪</span>
+                    <span>Logout</span>
+                </button>
+
+                <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             </div>
         </div>
     </nav>
@@ -254,6 +260,7 @@
         {{-- 2 columns on mobile, 3 on md+ --}}
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
 
+            {{-- Card 1: Active Lost Reports --}}
             <div class="card-texture stat-card stat-card-red rounded-2xl shadow-md p-4 sm:p-6">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-red-100 to-red-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🔴</div>
@@ -261,12 +268,9 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalLost }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Active Lost Reports</p>
-                <div class="mt-3 sm:mt-4 h-1.5 bg-red-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-red-400 to-red-600 rounded-full"
-                        style="width: {{ $totalLost > 0 ? min(100, $totalLost * 10) : 5 }}%"></div>
-                </div>
             </div>
 
+            {{-- Card 2: Found Items Posted --}}
             <div class="card-texture stat-card stat-card-green rounded-2xl shadow-md p-4 sm:p-6">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🟢</div>
@@ -274,13 +278,9 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalFound }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Found Items Posted</p>
-                <div class="mt-3 sm:mt-4 h-1.5 bg-green-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-green-400 to-green-600 rounded-full"
-                        style="width: {{ $totalFound > 0 ? min(100, $totalFound * 10) : 5 }}%"></div>
-                </div>
             </div>
 
-            {{-- 3rd card: spans full width on mobile so it doesn't look orphaned --}}
+            {{-- Card 3: Items Claimed/Returned --}}
             <div class="card-texture stat-card stat-card-yellow rounded-2xl shadow-md p-4 sm:p-6 col-span-2 md:col-span-1">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">✅</div>
@@ -288,10 +288,6 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalClaimed }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Items Claimed/Returned</p>
-                <div class="mt-3 sm:mt-4 h-1.5 bg-yellow-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full"
-                        style="width: {{ $totalClaimed > 0 ? min(100, $totalClaimed * 10) : 5 }}%"></div>
-                </div>
             </div>
 
         </div>
@@ -355,6 +351,24 @@
         </div>
 
     </div>
-
+<script>
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will need to login again to access your dashboard.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#800000',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logout-form').submit();
+            }
+        })
+    }
+</script>
 </body>
 </html>

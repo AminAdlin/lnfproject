@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password - UTMFoundIt</title>
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
 
@@ -84,17 +84,23 @@
                 <input type="email" name="email" class="form-control" value="{{ $email }}" readonly>
             </div>
 
+            {{-- 1. New Password Input --}}
             <div class="mb-3">
                 <div class="input-group">
                     <input type="password" id="password" name="password" class="form-control" placeholder="New Password" required>
-                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password')">👁</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password', 'eyeIconNew')">
+                        <i id="eyeIconNew" class="bi bi-eye"></i>
+                    </button>
                 </div>
             </div>
 
+            {{-- 2. Confirm Password Input --}}
             <div class="mb-3">
                 <div class="input-group">
                     <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" placeholder="Confirm Password" required>
-                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password_confirmation')">👁</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password_confirmation', 'eyeIconConfirm')">
+                        <i id="eyeIconConfirm" class="bi bi-eye"></i>
+                    </button>
                 </div>
             </div>
 
@@ -105,10 +111,19 @@
 </div>
 
 <script>
-function togglePassword(id) {
-    const input = document.getElementById(id);
-    input.type = (input.type === 'password') ? 'text' : 'password';
-}
+    // Fungsi yang dah ditiup sakti supaya boleh kawal mana-mana input & icon
+    function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash'; 
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye'; 
+        }
+    }
 </script>
 
 </body>

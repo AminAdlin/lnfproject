@@ -7,6 +7,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <style>
         body {
@@ -113,10 +114,9 @@
 
             <div class="mb-3">
                 <div class="input-group">
-                    <input type="password" name="password" id="password" class="form-control"
-                           placeholder="Password" required>
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
                     <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
-                        👁
+                    <i id="eyeIcon" class="bi bi-eye"></i>
                     </button>
                 </div>
             </div>
@@ -144,7 +144,17 @@
 <script>
     function togglePassword() {
         const input = document.getElementById('password');
-        input.type = input.type === 'password' ? 'text' : 'password';
+        const icon = document.getElementById('eyeIcon');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            // Tukar jadi icon mata kena pangkah/tutup
+            icon.className = 'bi bi-eye-slash'; 
+        } else {
+            input.type = 'password';
+            // Tukar balik jadi icon mata bukak
+            icon.className = 'bi bi-eye'; 
+        }
     }
 </script>
 

@@ -235,8 +235,8 @@
             <div class="mb-3">
                 <div class="input-group">
                     <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
-                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password')">
-                        👁
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
+                    <i id="eyeIcon" class="bi bi-eye"></i>
                     </button>
                 </div>
             </div>
@@ -272,11 +272,20 @@ function goLogin() {
 </script>
 
 <script>
-function togglePassword(id) {
-    const input = document.getElementById(id);
-
-    input.type = (input.type === 'password') ? 'text' : 'password';
-}
+function togglePassword() {
+        const input = document.getElementById('password');
+        const icon = document.getElementById('eyeIcon');
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            // Tukar jadi icon mata kena pangkah/tutup
+            icon.className = 'bi bi-eye-slash'; 
+        } else {
+            input.type = 'password';
+            // Tukar balik jadi icon mata bukak
+            icon.className = 'bi bi-eye'; 
+        }
+    }
 </script>
 
 </body>

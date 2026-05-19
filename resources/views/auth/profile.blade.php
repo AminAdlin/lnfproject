@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - UTM FoundIt</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
@@ -51,7 +52,7 @@
             {{-- Brand --}}
             <div class="flex items-center gap-2 sm:gap-3">
                 <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
-                    <img src="/images/logo.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
+                    <img src="/images/logo_utmfoundit_crop.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
                 </div>
                 <div>
                     <h1 class="text-base sm:text-xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
@@ -68,12 +69,17 @@
                 <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
                 </a>
-                <form method="POST" action="{{ route('logout') }}">
+                {{-- Logout --}}
+                <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
                     @csrf
-                    <button type="submit" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg">
-                        Logout
-                    </button>
                 </form>
+                <button type="button" onclick="confirmLogout()" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg flex items-center gap-1.5">
+                    <span>🚪</span>
+                    <span>Logout</span>
+                </button>
+
+                <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             </div>
         </div>
     </nav>
@@ -122,6 +128,7 @@
         {{-- 2 cols on mobile, 3 on md+ --}}
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
 
+            {{-- Card 1: Lost Reports --}}
             <div class="card-texture stat-card stat-card-red rounded-2xl shadow-md p-4 sm:p-6">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-red-100 to-red-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">📋</div>
@@ -129,11 +136,9 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ auth()->user()->items()->where('type', 'lost')->count() }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Lost Reports</p>
-                <div class="mt-3 sm:mt-4 h-1.5 bg-red-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-red-400 to-red-600 rounded-full" style="width: {{ auth()->user()->items()->where('type', 'lost')->count() > 0 ? min(100, auth()->user()->items()->where('type', 'lost')->count() * 20) : 5 }}%"></div>
-                </div>
             </div>
 
+            {{-- Card 2: Found Posts --}}
             <div class="card-texture stat-card stat-card-green rounded-2xl shadow-md p-4 sm:p-6">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">📦</div>
@@ -141,12 +146,9 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ auth()->user()->items()->where('type', 'found')->count() }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Found Posts</p>
-                <div class="mt-3 sm:mt-4 h-1.5 bg-green-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-green-400 to-green-600 rounded-full" style="width: {{ auth()->user()->items()->where('type', 'found')->count() > 0 ? min(100, auth()->user()->items()->where('type', 'found')->count() * 20) : 5 }}%"></div>
-                </div>
             </div>
 
-            {{-- 3rd card spans full width on mobile --}}
+            {{-- Card 3: Claims Made (spans full width on mobile) --}}
             <div class="card-texture stat-card stat-card-yellow rounded-2xl shadow-md p-4 sm:p-6 col-span-2 md:col-span-1">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🔐</div>
@@ -154,9 +156,6 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ auth()->user()->claims()->count() }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Claims Made</p>
-                <div class="mt-3 sm:mt-4 h-1.5 bg-yellow-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full" style="width: {{ auth()->user()->claims()->count() > 0 ? min(100, auth()->user()->claims()->count() * 20) : 5 }}%"></div>
-                </div>
             </div>
 
         </div>
@@ -223,34 +222,47 @@
                 </div>
                 <form method="POST" action="/profile/password">
                     @csrf
+                    
+                    {{-- 1. Current Password --}}
                     <div class="mb-4">
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Current Password</label>
                         <div class="relative">
                             <input type="password" id="current_password" name="current_password" required placeholder="••••••••"
                                 class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium pr-10" />
-                            <button type="button" onclick="togglePass('current_password')"
-                                class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 text-sm">👁</button>
+                            <button type="button" onclick="togglePass('current_password', 'icon_current')"
+                                class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 text-sm">
+                                <i id="icon_current" class="bi bi-eye"></i>
+                            </button>
                         </div>
                     </div>
+
+                    {{-- 2. New Password --}}
                     <div class="mb-4">
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">New Password</label>
                         <div class="relative">
                             <input type="password" id="new_password" name="password" required placeholder="••••••••"
                                 class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium pr-10" />
-                            <button type="button" onclick="togglePass('new_password')"
-                                class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 text-sm">👁</button>
+                            <button type="button" onclick="togglePass('new_password', 'icon_new')"
+                                class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 text-sm">
+                                <i id="icon_new" class="bi bi-eye"></i>
+                            </button>
                         </div>
                         <p class="text-xs text-gray-400 mt-1">8–16 chars, uppercase, lowercase, number & special character.</p>
                     </div>
+
+                    {{-- 3. Confirm New Password --}}
                     <div class="mb-5 sm:mb-6">
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Confirm New Password</label>
                         <div class="relative">
                             <input type="password" id="password_confirmation" name="password_confirmation" required placeholder="••••••••"
                                 class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium pr-10" />
-                            <button type="button" onclick="togglePass('password_confirmation')"
-                                class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 text-sm">👁</button>
+                            <button type="button" onclick="togglePass('password_confirmation', 'icon_confirm')"
+                                class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 text-sm">
+                                <i id="icon_confirm" class="bi bi-eye"></i>
+                            </button>
                         </div>
                     </div>
+
                     <button type="submit"
                         class="w-full bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white font-bold py-2.5 px-4 rounded-xl transition shadow-md text-sm">
                         Update Password
@@ -263,11 +275,37 @@
     </div>
 
     <script>
-        function togglePass(fieldId) {
-            const input = document.getElementById(fieldId);
-            input.type = input.type === 'password' ? 'text' : 'password';
+    function togglePass(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
         }
-    </script>
+    }
+
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will need to login again to access your dashboard.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#800000',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logout-form').submit();
+            }
+        })
+    }
+</script>
 
 </body>
 </html>

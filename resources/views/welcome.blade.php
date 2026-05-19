@@ -89,7 +89,8 @@
 
     <!-- LOGO -->
     <div class="logo">
-        UTM
+        <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt" 
+             style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%; padding: 8px;">
     </div>
 
     <!-- TITLE -->
