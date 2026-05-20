@@ -19,16 +19,19 @@
 <body class="bg-gray-50 min-h-screen">
 
     {{-- Navbar --}}
-    <nav class="gradient-bg text-white px-8 py-4 flex justify-between items-center shadow-lg sticky top-0 z-50">
-        <div class="flex items-center gap-3">
-            <div class="bg-white rounded-full p-2 shadow">
-                <span class="text-red-800 text-xl">🔍</span>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-wide">UTM FoundIt</h1>
-                <p class="text-red-200 text-xs">Lost & Found System</p>
-            </div>
-        </div>
+    <nav class="navbar-texture text-white sticky top-0 z-50">
+        <div class="navbar-inner flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
+            
+    {{-- Logo + Brand --}}
+    <div class="flex items-center gap-3 sm:gap-4">
+    <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
+    </div>
+    <div>
+        <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+        <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+    </div>
+    </div>
         <div class="flex items-center gap-4">
             <a href="/items" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
                 📋 All Items

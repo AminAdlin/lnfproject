@@ -42,16 +42,18 @@
 
     {{-- Navbar --}}
     <nav class="navbar-texture text-white sticky top-0 z-50">
-        <div class="flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
-            <div class="flex items-center gap-2 sm:gap-3">
-                <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
-                    <img src="/images/logo_utmfoundit_crop.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
-                </div>
-                <div>
-                    <h1 class="text-base sm:text-xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
-                    <p class="text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
-                </div>
-            </div>
+        <div class="navbar-inner flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
+            
+    {{-- Logo + Brand --}}
+    <div class="flex items-center gap-3 sm:gap-4">
+    <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
+    </div>
+    <div>
+        <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+        <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+    </div>
+    </div>
             <div class="flex items-center gap-1.5 sm:gap-3">
                 <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>

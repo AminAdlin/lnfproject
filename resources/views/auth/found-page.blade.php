@@ -8,10 +8,27 @@
 </head>
 <body class="bg-red-50 min-h-screen">
 
-    <nav class="bg-red-800 text-white px-6 py-4 flex justify-between items-center shadow">
-        <h1 class="text-xl font-bold">🔍 UTM FoundIt</h1>
+    {{-- Navbar --}}
+    <nav class="navbar-texture text-white sticky top-0 z-50">
+        <div class="navbar-inner flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
+            
+    {{-- Logo + Brand --}}
+    <div class="flex items-center gap-3 sm:gap-4">
+    <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
+    </div>
+    <div>
+        <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+        <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+    </div>
+    </div>
         <div class="flex items-center gap-4">
-            <a href="/dashboard" class="text-sm hover:underline">Dashboard</a>
+            <a href="/items" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
+                📋 All Items
+            </a>
+            <a href="/dashboard" class="glass rounded-full px-4 py-1.5 text-sm hover:bg-white hover:text-red-800 transition">
+                🏠 Dashboard
+            </a>
             {{-- Logout --}}
                 <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
                     @csrf
@@ -25,7 +42,6 @@
                 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         </div>
     </nav>
-
     <div class="max-w-6xl mx-auto px-6 py-8">
 
         <div class="flex justify-between items-center mb-6">

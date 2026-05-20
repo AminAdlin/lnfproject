@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications - UTM FoundIt</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
         body {
@@ -37,17 +40,18 @@
 
     {{-- Navbar --}}
     <nav class="navbar-texture text-white sticky top-0 z-50">
-        <div class="flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
-            {{-- Brand --}}
-            <div class="flex items-center gap-2 sm:gap-3">
-                <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
-                    <img src="/images/logo_utmfoundit_crop.png" alt="UTM FoundIt Logo" class="h-7 w-7 sm:h-9 sm:w-9 object-contain">
-                </div>
-                <div>
-                    <h1 class="text-base sm:text-xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
-                    <p class="text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
-                </div>
-            </div>
+        <div class="navbar-inner flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
+            
+    {{-- Logo + Brand --}}
+    <div class="flex items-center gap-3 sm:gap-4">
+    <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
+    </div>
+    <div>
+        <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+        <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+    </div>
+    </div>
 
             {{-- Nav Actions --}}
             <div class="flex items-center gap-1.5 sm:gap-4">
