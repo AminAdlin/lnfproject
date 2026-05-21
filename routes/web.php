@@ -45,18 +45,15 @@ Route::get('/email/verify', function () {
 
 Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
     $user = \App\Models\User::findOrFail($id);
-    
-    // Verify hash
+
     if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
         abort(403);
     }
 
-    // Mark email verified
     if (! $user->hasVerifiedEmail()) {
         $user->markEmailAsVerified();
     }
 
-    // SHOW SUCCESS PAGE
     return view('auth.verified-success');
 
 })->middleware('signed')->name('verification.verify');
@@ -104,6 +101,15 @@ Route::delete('/items/{id}', [ItemController::class, 'deleteItem'])->middleware(
 Route::get('/items/{id}/claim', [ClaimController::class, 'showClaimForm'])->middleware('auth');
 Route::post('/items/{id}/claim', [ClaimController::class, 'submitClaim'])->middleware('auth');
 Route::get('/my-claims', [ClaimController::class, 'myClaims'])->middleware('auth');
+
+// FINDER CLAIMS INBOX
+Route::get('/finder-claims', [ClaimController::class, 'finderClaims'])->middleware('auth');
+Route::post('/claims/{id}/approve', [ClaimController::class, 'approveClaim'])->middleware('auth');
+Route::post('/claims/{id}/reject', [ClaimController::class, 'rejectClaim'])->middleware('auth');
+
+// PAYMENT
+Route::get('/claims/{id}/payment', [ClaimController::class, 'showPayment'])->middleware('auth');
+Route::post('/claims/{id}/payment', [ClaimController::class, 'processPayment'])->middleware('auth');
 
 // I FOUND THIS
 Route::get('/items/{id}/found-this', [NotificationController::class, 'showFoundThisForm'])->middleware('auth');

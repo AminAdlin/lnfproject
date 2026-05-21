@@ -6,6 +6,8 @@
     <title>Dashboard - UTM FoundIt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * { font-family: 'Inter', sans-serif; }
 
@@ -124,7 +126,6 @@
             margin: 1.5rem 0;
         }
 
-        /* Mobile navbar: tighter spacing */
         @media (max-width: 640px) {
             .navbar-inner { padding: 0.6rem 1rem; }
             .brand-title { font-size: 1rem; }
@@ -137,20 +138,21 @@
     {{-- Navbar --}}
     <nav class="navbar-texture text-white sticky top-0 z-50">
         <div class="navbar-inner flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
-            
-    {{-- Logo + Brand --}}
-    <div class="flex items-center gap-3 sm:gap-4">
-    <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
-    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
-    </div>
-    <div>
-        <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
-        <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
-    </div>
-    </div>
+
+            {{-- Logo + Brand --}}
+            <div class="flex items-center gap-3 sm:gap-4">
+                <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+                    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
+                </div>
+                <div>
+                    <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+                    <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+                </div>
+            </div>
 
             {{-- Nav Actions --}}
             <div class="flex items-center gap-1.5 sm:gap-3">
+
                 {{-- Notifications --}}
                 <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm relative flex items-center gap-1">
                     🔔
@@ -161,7 +163,13 @@
                     @endif
                 </a>
 
-                {{-- My Claims --}}
+                {{-- Claims Inbox (Finder) --}}
+                <a href="/finder-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                    <span>📬</span>
+                    <span class="hidden sm:inline text-xs sm:text-sm">Claims Inbox</span>
+                </a>
+
+                {{-- My Claims (Claimant) --}}
                 <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     <span>🔐</span>
                     <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
@@ -189,8 +197,6 @@
                     <span>Logout</span>
                 </button>
 
-                <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             </div>
         </div>
     </nav>
@@ -207,7 +213,6 @@
         {{-- Welcome Banner --}}
         <div class="banner-texture text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 shadow-2xl relative overflow-hidden">
             <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                {{-- Left: Avatar + Greeting --}}
                 <div class="flex items-center gap-4">
                     @if(auth()->user()->profile_photo)
                         <img src="{{ asset('storage/' . auth()->user()->profile_photo) }}"
@@ -225,8 +230,6 @@
                         <p class="text-red-200 text-xs sm:text-sm">Stay updated on the latest lost and found activities at UTM.</p>
                     </div>
                 </div>
-
-                {{-- Right: Total Posts pill — visible on all screens --}}
                 <div class="glass-dark rounded-2xl px-5 py-3 text-center self-start sm:self-auto">
                     <p class="text-2xl sm:text-3xl font-extrabold">{{ \App\Models\Item::count() }}</p>
                     <p class="text-red-200 text-xs font-semibold uppercase tracking-wider mt-0.5">Total Posts</p>
@@ -259,10 +262,8 @@
 
         {{-- Summary Cards --}}
         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Overview</p>
-        {{-- 2 columns on mobile, 3 on md+ --}}
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
 
-            {{-- Card 1: Active Lost Reports --}}
             <div class="card-texture stat-card stat-card-red rounded-2xl shadow-md p-4 sm:p-6">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-red-100 to-red-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🔴</div>
@@ -270,9 +271,11 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalLost }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Active Lost Reports</p>
+                <div class="mt-3 h-1.5 bg-red-100 rounded-full overflow-hidden">
+                    <div class="h-1.5 bg-gradient-to-r from-red-400 to-red-600 rounded-full" style="width: {{ $totalLost > 0 ? min(100, $totalLost * 10) : 5 }}%"></div>
+                </div>
             </div>
 
-            {{-- Card 2: Found Items Posted --}}
             <div class="card-texture stat-card stat-card-green rounded-2xl shadow-md p-4 sm:p-6">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🟢</div>
@@ -280,9 +283,11 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalFound }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Found Items Posted</p>
+                <div class="mt-3 h-1.5 bg-green-100 rounded-full overflow-hidden">
+                    <div class="h-1.5 bg-gradient-to-r from-green-400 to-green-600 rounded-full" style="width: {{ $totalFound > 0 ? min(100, $totalFound * 10) : 5 }}%"></div>
+                </div>
             </div>
 
-            {{-- Card 3: Items Claimed/Returned --}}
             <div class="card-texture stat-card stat-card-yellow rounded-2xl shadow-md p-4 sm:p-6 col-span-2 md:col-span-1">
                 <div class="flex items-center justify-between mb-3 sm:mb-5">
                     <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">✅</div>
@@ -290,6 +295,9 @@
                 </div>
                 <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalClaimed }}</p>
                 <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Items Claimed/Returned</p>
+                <div class="mt-3 h-1.5 bg-yellow-100 rounded-full overflow-hidden">
+                    <div class="h-1.5 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full" style="width: {{ $totalClaimed > 0 ? min(100, $totalClaimed * 10) : 5 }}%"></div>
+                </div>
             </div>
 
         </div>
@@ -353,24 +361,26 @@
         </div>
 
     </div>
-<script>
-    function confirmLogout() {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You will need to login again to access your dashboard.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#800000',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, logout!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('logout-form').submit();
-            }
-        })
-    }
-</script>
+
+    <script>
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You will need to login again to access your dashboard.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#800000',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, logout!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            })
+        }
+    </script>
+
 </body>
 </html>

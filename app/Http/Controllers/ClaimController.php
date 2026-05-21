@@ -7,6 +7,8 @@ use App\Models\Item;
 use App\Models\Claim;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\ClaimNotificationMail;
+use App\Mail\ClaimStatusMail;
 
 class ClaimController extends Controller
 {
@@ -19,7 +21,7 @@ class ClaimController extends Controller
             return back()->with('error', 'This item cannot be claimed.');
         }
 
-        if ($item->user_id === Auth::id()) {
+        if ($item->user_id === auth()->id()) {
             return back()->with('error', 'You cannot claim your own post.');
         }
 
@@ -28,7 +30,7 @@ class ClaimController extends Controller
         }
 
         $existingClaim = Claim::where('item_id', $id)
-                              ->where('user_id', Auth::id())
+                              ->where('user_id', auth()->id())
                               ->first();
 
         if ($existingClaim) {
@@ -48,60 +50,136 @@ class ClaimController extends Controller
             'delivery_method' => 'required|in:self_pickup,delivery',
         ]);
 
-        // Verify security answer
         if (!password_verify($request->answer, $item->security_answer)) {
             return back()->withErrors([
                 'answer' => 'Your answer is incorrect. Please try again.',
             ])->withInput();
         }
 
-        // Create claim
         $claim = Claim::create([
             'item_id'         => $item->id,
-            'user_id'         => Auth::id(),
+            'user_id'         => auth()->id(),
             'answer'          => $request->answer,
             'delivery_method' => $request->delivery_method,
             'status'          => 'pending',
         ]);
 
-        // Update item status
         $item->update(['status' => 'claimed']);
 
-        \App\Models\Notification::create([
-            'item_id'     => $item->id,
-            'sender_id'   => Auth::id(),
-            'receiver_id' => $item->user_id,
-            'message'     => Auth::user()->name . ' has claimed your item: ' . $item->title,
-            'contact'     => Auth::user()->email,
-            'is_read'     => false,
-        ]);
-
-            Mail::send(
-                'auth.emails.claim-confirmed',
-                [
-                    'finderName'   => $item->user->name,
-                    'itemName'     => $item->title,
-                    'claimantName' => Auth::user()->name,
-                ],
-                function ($message) use ($item) {
-
-                    $message->to($item->user->email)
-                        ->subject('Item Claim Notification');
-
-                }
-            );
+        // Send email to finder
+        try {
+            Mail::to($item->user->email)->send(new ClaimNotificationMail($claim->load('item.user', 'user')));
+        } catch (\Exception $e) {
+            // Email failed but claim still submitted
+        }
 
         return redirect('/items')->with('status', 'Claim submitted successfully! The finder has been notified.');
     }
 
-    // My claims page
+    // My claims page (claimant)
     public function myClaims()
     {
         $claims = Claim::with('item')
-                       ->where('user_id', Auth::id())
+                       ->where('user_id', auth()->id())
                        ->orderBy('created_at', 'desc')
                        ->get();
 
         return view('auth.my-claims', compact('claims'));
+    }
+
+    // Finder's claims inbox
+    public function finderClaims()
+    {
+        $items = Item::with(['claims.user'])
+                     ->where('user_id', auth()->id())
+                     ->where('type', 'found')
+                     ->orderBy('created_at', 'desc')
+                     ->get();
+
+        return view('auth.finder-claims', compact('items'));
+    }
+
+    // Approve claim
+    public function approveClaim($claimId)
+    {
+        $claim = Claim::with(['item', 'user'])->findOrFail($claimId);
+
+        if ($claim->item->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        $claim->update(['status' => 'approved']);
+
+        // Send email to claimant
+        try {
+            Mail::to($claim->user->email)->send(new ClaimStatusMail($claim, 'approved'));
+        } catch (\Exception $e) {}
+
+        // If delivery redirect to payment
+        if ($claim->delivery_method === 'delivery') {
+            return redirect('/claims/' . $claim->id . '/payment')->with('status', 'Claim approved! Claimant needs to complete payment.');
+        }
+
+        return back()->with('status', 'Claim approved! The claimant has been notified.');
+    }
+
+    // Reject claim
+    public function rejectClaim($claimId)
+    {
+        $claim = Claim::with(['item', 'user'])->findOrFail($claimId);
+
+        if ($claim->item->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        $claim->update(['status' => 'rejected']);
+        $claim->item->update(['status' => 'active']);
+
+        // Send email to claimant
+        try {
+            Mail::to($claim->user->email)->send(new ClaimStatusMail($claim, 'rejected'));
+        } catch (\Exception $e) {}
+
+        return back()->with('status', 'Claim rejected. The item is now active again.');
+    }
+
+    // Show payment page
+    public function showPayment($claimId)
+    {
+        $claim = Claim::with(['item.user', 'user'])->findOrFail($claimId);
+
+        if ($claim->user_id !== auth()->id() && $claim->item->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        return view('auth.payment', compact('claim'));
+    }
+
+    // Process payment
+    public function processPayment(Request $request, $claimId)
+    {
+        $claim = Claim::with(['item', 'user'])->findOrFail($claimId);
+
+        if ($claim->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'card_name'   => 'required|string',
+            'card_number' => 'required|string|min:16|max:19',
+            'expiry'      => 'required|string',
+            'cvv'         => 'required|string|min:3|max:4',
+        ]);
+
+        // Simulate payment — create transaction
+        \App\Models\Transaction::create([
+            'claim_id'          => $claim->id,
+            'user_id'           => auth()->id(),
+            'amount'            => 5.00,
+            'payment_status'    => 'paid',
+            'payment_reference' => 'TXN-' . strtoupper(uniqid()),
+        ]);
+
+        return redirect('/my-claims')->with('status', 'Payment successful! The finder will arrange delivery soon.');
     }
 }
