@@ -6,6 +6,8 @@
     <title>UTMFoundIt - Register</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- TAMBAHAN: Kita tambah pautan Bootstrap Icons supaya class bi bi-eye boleh berfungsi -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
@@ -100,7 +102,6 @@
             font-weight: 700;
         }
 
-/* BODY */
         .popup-body {
             padding: 25px;
             text-align: center;
@@ -118,7 +119,6 @@
             font-size: 14px;
         }
 
-/* FOOTER */
         .popup-footer {
             padding: 0 25px 25px;
             text-align: center;
@@ -141,7 +141,6 @@
             background: #4b0000;
         }
 
-/* ANIMATION */
         @keyframes popIn {
             from {
                 transform: scale(0.8);
@@ -153,7 +152,6 @@
             }
         }
 
-/* RESPONSIVE */
         @media (max-width: 480px) {
             .popup-body p {
                 font-size: 16px;
@@ -175,8 +173,7 @@
         <p>Lost & Found System</p>
     </div>
 
-    <div class="card shadow p-4 w-100"
-    style="max-width: 420px;">
+    <div class="card shadow p-4 w-100" style="max-width: 420px;">
 
         <h4 class="text-center mb-4">Create Account</h4>
 
@@ -198,25 +195,17 @@
 
         @if (session('status') == 'verification-sent')
         <div id="popup" class="popup">
-
             <div class="popup-box">
-
-                <!-- Header -->
                 <div class="popup-header">
                     <h2>UTMFoundIt</h2>
                 </div>
-
-                <!-- Body -->
                 <div class="popup-body">
                     <p>Email Verification Sent</p>
                     <small>Please check your email inbox to verify your account.</small>
                 </div>
-
-                <!-- Button -->
                 <div class="popup-footer">
                     <button onclick="goLogin()">OK</button>
                 </div>
-
             </div>
         </div>
         @endif
@@ -232,20 +221,24 @@
                 <input type="email" name="email" class="form-control" placeholder="Email Address" required>
             </div>
 
+            <!-- INPUT 1: Password -->
             <div class="mb-3">
                 <div class="input-group">
                     <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
-                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
-                    <i id="eyeIcon" class="bi bi-eye"></i>
+                    <!-- Ditukar: Hantar ID input dan ID ikon ke fungsi -->
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password', 'eyeIcon')">
+                        <i id="eyeIcon" class="bi bi-eye"></i>
                     </button>
                 </div>
             </div>
 
+            <!-- INPUT 2: Confirm Password -->
             <div class="mb-3">
                 <div class="input-group">
                     <input type="password" name="password_confirmation" id="password_confirmation" class="form-control" placeholder="Confirm Password" required>
-                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password_confirmation')">
-                        👁
+                    <!-- Ditukar: Guna class Bootstrap Icons dan hantar ID yang betul -->
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('password_confirmation', 'eyeIconConfirm')">
+                        <i id="eyeIconConfirm" class="bi bi-eye"></i>
                     </button>
                 </div>
             </div>
@@ -269,23 +262,20 @@ function closePopup() {
 function goLogin() {
     window.location.href = "/login";
 }
-</script>
 
-<script>
-function togglePassword() {
-        const input = document.getElementById('password');
-        const icon = document.getElementById('eyeIcon');
-        
-        if (input.type === 'password') {
-            input.type = 'text';
-            // Tukar jadi icon mata kena pangkah/tutup
-            icon.className = 'bi bi-eye-slash'; 
-        } else {
-            input.type = 'password';
-            // Tukar balik jadi icon mata bukak
-            icon.className = 'bi bi-eye'; 
-        }
+// Perubahan di sini: Fungsi sekarang terima 2 parameter (inputId dan iconId) supaya boleh diguna semula
+function togglePassword(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash'; 
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye'; 
     }
+}
 </script>
 
 </body>
