@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('contact');
             $table->string('image')->nullable();
             $table->enum('type', ['lost', 'found'])->default('lost');
-            $table->enum('status', ['active', 'claimed', 'returned'])->default('active');
+            $table->enum('status', ['active', 'claimed', 'returned_by_finder', 'returned', 'disputed'])->default('active')->change();
             $table->string('security_question')->nullable();
             $table->string('security_answer')->nullable();
             $table->timestamps();

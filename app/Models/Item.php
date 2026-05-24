@@ -19,8 +19,15 @@ class Item extends Model
         'status',
         'security_question',
         'security_answer',
+        'bank_name', 
+        'bank_account', 
+        'bank_qr'
     ];
-
+    
+    protected $casts = [
+    'status' => 'string',
+    'date_reported' => 'date',
+];
     public function user()
     {
         return $this->belongsTo(User::class);

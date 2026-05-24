@@ -44,16 +44,17 @@
     <nav class="navbar-texture text-white sticky top-0 z-50">
         <div class="navbar-inner flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
             
-    {{-- Logo + Brand --}}
-    <div class="flex items-center gap-3 sm:gap-4">
-    <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
-    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
-    </div>
-    <div>
-        <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
-        <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
-    </div>
-    </div>
+            {{-- Logo + Brand --}}
+            <div class="flex items-center gap-3 sm:gap-4">
+                <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+                    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
+                </div>
+                <div>
+                    <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+                    <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+                </div>
+            </div>
+            
             <div class="flex items-center gap-1.5 sm:gap-3">
                 <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
@@ -102,14 +103,14 @@
 
         @if (session('status'))
             <div class="mb-5 text-sm text-green-700 bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
-                <span class="text-xl">✅</span>
+                <span>✅</span>
                 <span class="font-medium">{{ session('status') }}</span>
             </div>
         @endif
 
         @if (session('error'))
             <div class="mb-5 text-sm text-red-700 bg-red-50 border border-red-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
-                <span class="text-xl">❌</span>
+                <span>❌</span>
                 <span class="font-medium">{{ session('error') }}</span>
             </div>
         @endif
@@ -171,50 +172,89 @@
 
                             <p class="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed">{{ Str::limit($item->description, 80) }}</p>
 
-                            {{-- I Found This --}}
-                            @if($item->type === 'lost' && auth()->id() !== $item->user_id && $item->status === 'active')
-                                <a href="/items/{{ $item->id }}/found-this"
-                                    class="block w-full text-center bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
-                                    🙋 I Found This!
-                                </a>
+                            {{-- ==========================================
+                                 ALIRAN NAVIGASI / LOGIK KAWALAN TINDAKAN
+                                 ========================================== --}}
+                            @php
+                                $isFinder = (auth()->id() === $item->user_id);
+                                $isApprovedClaimant = $item->claims()->where('user_id', auth()->id())->whereIn('status', ['approved', 'paid'])->exists();
+                            @endphp
+
+                            {{-- 1. BUTTON UNTUK ORANG AWAM (Bukan Tuan Post & Item Masih Aktif) --}}
+                            @if(!$isFinder && $item->status === 'active')
+                                {{-- I Found This (Untuk kes Lost Item) --}}
+                                @if($item->type === 'lost')
+                                    <a href="/items/{{ $item->id }}/found-this"
+                                        class="block w-full text-center bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
+                                        🙋 I Found This!
+                                    </a>
+                                @endif
+
+                                {{-- Claim (Untuk kes Found Item) --}}
+                                @if($item->type === 'found')
+                                    <a href="/items/{{ $item->id }}/claim"
+                                        class="block w-full text-center bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
+                                        🔐 Claim This Item
+                                    </a>
+                                @endif
                             @endif
 
-                            {{-- Claim --}}
-                            @if($item->type === 'found' && auth()->id() !== $item->user_id && $item->status === 'active')
-                                <a href="/items/{{ $item->id }}/claim"
-                                    class="block w-full text-center bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
-                                    🔐 Claim This Item
-                                </a>
-                            @endif
-
-                            {{-- Status badges --}}
+                            {{-- 2. STATUS BADGES REKA BENTUK ASAL --}}
                             @if($item->status === 'returned')
                                 <div class="w-full text-center text-xs sm:text-sm text-gray-400 py-2.5 bg-gray-50 rounded-xl border border-gray-100 mb-2 font-semibold">✅ Case Closed</div>
                             @elseif($item->status === 'claimed')
                                 <div class="w-full text-center text-xs sm:text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">⏳ Claimed — Pending Review</div>
-                            @elseif($item->type === 'found' && auth()->id() === $item->user_id && $item->status === 'active')
+                            @elseif($item->status === 'returned_by_finder')
+                                <div class="w-full text-center text-xs sm:text-sm text-blue-600 py-2.5 bg-blue-50 rounded-xl border border-blue-100 mb-2 font-semibold">📦 Handed Over — Awaiting Confirmation</div>
+                            @endif
+
+                            {{-- 3. INTERAKSI DWI-PENGESAHAN (TWO-WAY VERIFICATION) BARU --}}
+                            
+                            {{-- [POV FINDER] - Button Merah "Mark as Returned" apabila status item dituntut (claimed) --}}
+                            @if($isFinder && $item->status === 'claimed')
                                 <form method="POST" action="/items/{{ $item->id }}/returned">
                                     @csrf
                                     <button type="submit"
-                                        onclick="return confirm('Mark this item as returned? This will close the case.')"
+                                        onclick="return confirm('Confirm that you have handed over this item? This will request the claimant to verify receipt.')"
                                         class="w-full bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
-                                        ✅ Mark as Returned
+                                        📦 Mark as Returned
                                     </button>
                                 </form>
                             @endif
 
-                            {{-- Delete --}}
-                            @if(auth()->id() === $item->user_id)
-                                <form method="POST" action="/items/{{ $item->id }}">
+                            {{-- [POV CLAIMANT] - Button Hijau "Item Received" apabila Finder sudah serah barang --}}
+                            @if($isApprovedClaimant && $item->status === 'returned_by_finder')
+                                <form method="POST" action="/items/{{ $item->id }}/received">
                                     @csrf
-                                    @method('DELETE')
                                     <button type="submit"
-                                        onclick="return confirm('Are you sure you want to delete this post?')"
-                                        class="w-full bg-gray-50 hover:bg-red-50 text-red-800 border border-gray-200 hover:border-red-200 text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mt-2">
-                                        🗑️ Delete Post
+                                        onclick="return confirm('Confirm that you have successfully received your item? This will close the case.')"
+                                        class="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
+                                        ✅ Item Received
                                     </button>
                                 </form>
                             @endif
+
+                            {{-- 4. BUTTON DELETE DIKEMASKINI (Hanya untuk Tuan Post & Wajib Berstatus Active) --}}
+                            @if($isFinder)
+                                <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                                    @if($item->status === 'active')
+                                        <form action="{{ route('item.delete', $item->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');" class="w-full text-right">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-500 hover:text-red-700 font-semibold text-xs sm:text-sm transition-colors duration-200">
+                                                🗑️ Delete Post
+                                            </button>
+                                        </form>
+                                    @else
+                                        <div class="w-full text-right">
+                                            <span class="text-gray-400 text-xs sm:text-sm italic font-medium bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100 inline-block">
+                                                🔒 Post Locked ({{ ucfirst(str_replace('_', ' ', $item->status)) }})
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+
                         </div>
                     </div>
                 @endforeach
@@ -242,7 +282,7 @@
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#800000',
-            cancelButtonColor: '#6c757d',
+            buttonColor: '#6c757d',
             confirmButtonText: 'Yes, logout!',
             cancelButtonText: 'Cancel',
             reverseButtons: true

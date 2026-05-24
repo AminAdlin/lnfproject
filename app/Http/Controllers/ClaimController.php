@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ClaimNotificationMail;
 use App\Mail\ClaimStatusMail;
+use App\Mail\PaymentReceiptMail;
 
 class ClaimController extends Controller
 {
@@ -40,40 +41,54 @@ class ClaimController extends Controller
         return view('auth.claim', compact('item'));
     }
 
+    // AJAX Check Security Answer
+    public function checkSecurityAnswer(Request $request, $id)
+    {
+        $item = Item::findOrFail($id);
+        
+        if (password_verify($request->answer, $item->security_answer)) {
+            return response()->json(['success' => true]);
+        }
+        
+        return response()->json(['success' => false, 'message' => 'Incorrect answer. Please try again.']);
+    }
+
     // Submit claim
     public function submitClaim(Request $request, $id)
     {
         $item = Item::with('user')->findOrFail($id);
-
         $request->validate([
-            'answer'          => 'required|string',
+            'answer' => 'required|string',
             'delivery_method' => 'required|in:self_pickup,delivery',
         ]);
 
         if (!password_verify($request->answer, $item->security_answer)) {
-            return back()->withErrors([
-                'answer' => 'Your answer is incorrect. Please try again.',
-            ])->withInput();
+            return back()->withErrors(['answer' => 'Invalid security answer.'])->withInput();
         }
 
         $claim = Claim::create([
-            'item_id'         => $item->id,
-            'user_id'         => auth()->id(),
-            'answer'          => $request->answer,
+            'item_id' => $item->id,
+            'user_id' => auth()->id(),
+            'answer' => $request->answer,
             'delivery_method' => $request->delivery_method,
-            'status'          => 'pending',
+            'status' => 'pending',
         ]);
 
-        $item->update(['status' => 'claimed']);
-
-        // Send email to finder
-        try {
-            Mail::to($item->user->email)->send(new ClaimNotificationMail($claim->load('item.user', 'user')));
-        } catch (\Exception $e) {
-            // Email failed but claim still submitted
+        // Jika Self-pickup, terus set status item kepada 'claimed' (Pending Review)
+        if ($request->delivery_method === 'self_pickup') {
+            $item->update(['status' => 'claimed']);
+            return redirect('/items')->with('status', 'Claim request (Self-Pickup) submitted successfully!');
         }
 
-        return redirect('/items')->with('status', 'Claim submitted successfully! The finder has been notified.');
+        // Jika delivery, bawa ke fasa payment dulu
+        $item->update(['status' => 'awaiting_payment']);
+
+        // Send notification email to the Finder
+        try {
+            Mail::to($item->user->email)->send(new ClaimNotificationMail($claim));
+        } catch (\Exception $e) {}
+
+        return redirect()->route('claim.payment', $claim->id);
     }
 
     // My claims page (claimant)
@@ -109,18 +124,20 @@ class ClaimController extends Controller
         }
 
         $claim->update(['status' => 'approved']);
+        
+        // Jika kaedah ialah self-pickup, boleh terus buka butang serah
+        if ($claim->delivery_method === 'self_pickup') {
+            $claim->item->update(['status' => 'claimed']); 
+        } else {
+            $claim->item->update(['status' => 'awaiting_payment']);
+        }
 
         // Send email to claimant
         try {
             Mail::to($claim->user->email)->send(new ClaimStatusMail($claim, 'approved'));
         } catch (\Exception $e) {}
 
-        // If delivery redirect to payment
-        if ($claim->delivery_method === 'delivery') {
-            return redirect('/claims/' . $claim->id . '/payment')->with('status', 'Claim approved! Claimant needs to complete payment.');
-        }
-
-        return back()->with('status', 'Claim approved! The claimant has been notified.');
+        return back()->with('status', 'Claim approved successfully! The claimant has been notified.');
     }
 
     // Reject claim
@@ -143,43 +160,58 @@ class ClaimController extends Controller
         return back()->with('status', 'Claim rejected. The item is now active again.');
     }
 
-    // Show payment page
+    // Show payment page (Only for the matching claimant)
     public function showPayment($claimId)
     {
-        $claim = Claim::with(['item.user', 'user'])->findOrFail($claimId);
-
-        if ($claim->user_id !== auth()->id() && $claim->item->user_id !== auth()->id()) {
-            return back()->with('error', 'Unauthorized action.');
+        $claim = Claim::with('item.user')->findOrFail($claimId);
+        
+        if ($claim->user_id !== auth()->id()) {
+            abort(403, 'Unauthorized action.');
         }
 
         return view('auth.payment', compact('claim'));
     }
 
-    // Process payment
-    public function processPayment(Request $request, $claimId)
+    // Process payment (Upload Bank Receipt)
+    public function processPayment(Request $request, $id)
     {
-        $claim = Claim::with(['item', 'user'])->findOrFail($claimId);
+        $request->validate([
+            'shipping_address' => 'required|string',
+            'receipt_file' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
+        ]);
 
-        if ($claim->user_id !== auth()->id()) {
-            return back()->with('error', 'Unauthorized action.');
+        // 1. TERUS LOAD skali dengan hubungan Item dan User (Finder) di awal query
+        $claim = Claim::with(['item.user', 'user'])->findOrFail($id);
+
+        if ($request->hasFile('receipt_file')) {
+            $path = $request->file('receipt_file')->store('receipts', 'public');
+            
+            // 2. Kemas kini rekod claim
+            $claim->update([
+                'payment_receipt' => $path,
+                'status' => 'paid'
+            ]);
+
+            // Status item dipaksa menjadi 'claimed' supaya Finder nampak di UI
+            $claim->item->update([
+                'status' => 'claimed' 
+            ]);
+
+            // 3. Ambil emel Finder secara direct daripada object yang dah di-load tadi
+            $finderEmail = $claim->item->user->email ?? null; 
+
+            if ($finderEmail) {
+                try {
+                    // Hantar mailable object. 
+                    // Pastikan dalam __construct() PaymentReceiptMail kau ada terima variable $claim dan $address!
+                    Mail::to($finderEmail)->send(new PaymentReceiptMail($claim, $request->shipping_address));
+                } catch (\Exception $e) {
+                    // Jika sangkut, check log dekat storage/logs/laravel.log untuk tengok ralat SMTP
+                    \Log::error("Gagal hantar email resit ke Finder: " . $e->getMessage());
+                }
+            }
         }
 
-        $request->validate([
-            'card_name'   => 'required|string',
-            'card_number' => 'required|string|min:16|max:19',
-            'expiry'      => 'required|string',
-            'cvv'         => 'required|string|min:3|max:4',
-        ]);
-
-        // Simulate payment — create transaction
-        \App\Models\Transaction::create([
-            'claim_id'          => $claim->id,
-            'user_id'           => auth()->id(),
-            'amount'            => 5.00,
-            'payment_status'    => 'paid',
-            'payment_reference' => 'TXN-' . strtoupper(uniqid()),
-        ]);
-
-        return redirect('/my-claims')->with('status', 'Payment successful! The finder will arrange delivery soon.');
+        return redirect('/dashboard')->with('status', 'Payment submitted and Finder notified!');
     }
 }

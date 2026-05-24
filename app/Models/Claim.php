@@ -12,13 +12,17 @@ class Claim extends Model
         'answer',
         'delivery_method',
         'status',
+        'payment_receipt'
     ];
 
     public function item()
     {
         return $this->belongsTo(Item::class);
     }
-
+    
+    protected $casts = [
+    'status' => 'string',
+    ];
     public function user()
     {
         return $this->belongsTo(User::class);

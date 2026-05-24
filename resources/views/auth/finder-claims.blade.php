@@ -18,7 +18,7 @@
         .navbar-texture { background: linear-gradient(135deg, #6b1414 0%, #7f1d1d 30%, #991b1b 60%, #b91c1c 100%); box-shadow: 0 4px 20px rgba(127,29,29,0.4); border-bottom: 1px solid rgba(255,255,255,0.1); }
         .banner-texture {
             background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E"),
-            linear-gradient(135deg, #6b1414 0%, #7f1d1d 30%, #991b1b 60%, #b91c1c 100%);
+                linear-gradient(135deg, #6b1414 0%, #7f1d1d 30%, #991b1b 60%, #b91c1c 100%);
         }
         .card-texture { background: white; background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23991b1b' fill-opacity='0.015' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E"); transition: all 0.3s ease; border: 1px solid rgba(127,29,29,0.08); }
         .glass { background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.25); }
@@ -77,7 +77,8 @@
             </div>
         @endif
 
-        @if($items->count() > 0)
+        {{-- Langkah 1: Baiki logik kad penunjuk sekiranya item kosong daripada sebarang claims --}}
+        @if($items->count() > 0 && $items->contains(fn($i) => $i->claims->count() > 0))
             <div class="space-y-6">
                 @foreach($items as $item)
                     @if($item->claims->count() > 0)
@@ -132,24 +133,30 @@
 
                                             <div class="flex flex-col items-end gap-2">
                                                 @if($claim->status === 'pending')
-                                                    <div class="flex gap-2">
-                                                        <form method="POST" action="/claims/{{ $claim->id }}/approve">
-                                                            @csrf
-                                                            <button type="submit"
-                                                                onclick="return confirm('Approve this claim?')"
-                                                                class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-md">
-                                                                ✅ Approve
-                                                            </button>
-                                                        </form>
-                                                        <form method="POST" action="/claims/{{ $claim->id }}/reject">
-                                                            @csrf
-                                                            <button type="submit"
-                                                                onclick="return confirm('Reject this claim?')"
-                                                                class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-md">
-                                                                ❌ Reject
-                                                            </button>
-                                                        </form>
-                                                    </div>
+                                                    {{-- Langkah 2: Hanya benarkan Approve/Reject jika item masih aktif (belum claimed/returned oleh orang lain) --}}
+                                                    @if($item->status === 'active')
+                                                        <div class="flex gap-2">
+                                                            {{-- Langkah 3: Tukar URL tegar kepada fungsi route Laravel --}}
+                                                            <form method="POST" action="{{ route('claims.approve', $claim->id) }}">
+                                                                @csrf
+                                                                <button type="submit"
+                                                                    onclick="return confirm('Approve this claim? This will automatically reject other pending claims for this item.')"
+                                                                    class="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-md">
+                                                                    ✅ Approve
+                                                                </button>
+                                                            </form>
+                                                            <form method="POST" action="{{ route('claims.reject', $claim->id) }}">
+                                                                @csrf
+                                                                <button type="submit"
+                                                                    onclick="return confirm('Reject this claim?')"
+                                                                    class="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-md">
+                                                                    ❌ Reject
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-xs text-gray-400 italic">Unavailable (Item Settled)</span>
+                                                    @endif
                                                 @elseif($claim->status === 'approved')
                                                     <span class="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-full font-bold border border-green-200 uppercase tracking-wider">✅ Approved</span>
                                                 @else

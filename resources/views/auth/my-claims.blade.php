@@ -44,16 +44,17 @@
     <nav class="navbar-texture text-white sticky top-0 z-50">
         <div class="navbar-inner flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
             
-    {{-- Logo + Brand --}}
-    <div class="flex items-center gap-3 sm:gap-4">
-    <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
-    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
-    </div>
-    <div>
-        <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
-        <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
-    </div>
-    </div>
+            {{-- Logo + Brand --}}
+            <div class="flex items-center gap-3 sm:gap-4">
+                <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
+                    <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
+                </div>
+                <div>
+                    <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+                    <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+                </div>
+            </div>
+
             <div class="flex items-center gap-1.5 sm:gap-3">
                 <a href="/items" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     📋 <span class="hidden sm:inline text-xs sm:text-sm">All Items</span>
@@ -61,6 +62,7 @@
                 <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
                 </a>
+                
                 {{-- Logout --}}
                 <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
                     @csrf
@@ -109,6 +111,13 @@
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="mb-5 text-sm text-red-700 bg-red-50 border border-red-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+                <span class="text-xl">⚠️</span>
+                <span class="font-medium">{{ session('error') }}</span>
+            </div>
+        @endif
+
         <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Your Claims</p>
 
         @if($claims->count() > 0)
@@ -128,7 +137,11 @@
                                 </div>
                             </div>
                             <div class="flex-shrink-0">
-                                @if($claim->status === 'pending')
+                                @if($claim->item->status === 'disputed')
+                                    <span class="text-xs bg-orange-100 text-orange-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-orange-200 uppercase tracking-wider whitespace-nowrap">⚠️ Disputed</span>
+                                @elseif($claim->item->status === 'returned')
+                                    <span class="text-xs bg-blue-100 text-blue-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-blue-200 uppercase tracking-wider whitespace-nowrap">🔒 Closed</span>
+                                @elseif($claim->status === 'pending')
                                     <span class="text-xs bg-yellow-100 text-yellow-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-yellow-200 uppercase tracking-wider whitespace-nowrap">⏳ Pending</span>
                                 @elseif($claim->status === 'approved')
                                     <span class="text-xs bg-green-100 text-green-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-green-200 uppercase tracking-wider whitespace-nowrap">✅ Approved</span>
@@ -137,6 +150,50 @@
                                 @endif
                             </div>
                         </div>
+
+                        {{-- STEP 5: DOUBLE CONFIRMATION SUITE ACTIONS --}}
+                        @if($claim->status === 'approved' && !$claim->item->claimant_confirmed && $claim->item->status !== 'disputed')
+                            <div class="mt-4 pt-4 border-t border-dashed border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-red-50/50 p-3 rounded-xl">
+                                <div>
+                                    <p class="text-xs font-bold text-red-900 flex items-center gap-1">📦 Action Required: Package Handover Verification</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">Please acknowledge if you have received your package to close this transaction successfully.</p>
+                                </div>
+                                <div class="flex items-center gap-2 self-end sm:self-center">
+                                    {{-- Confirm Received Button --}}
+                                    <form action="/items/{{ $claim->item->id }}/received" method="POST" onsubmit="return confirm('Are you sure you have received this item? This action will log your verification entry.');">
+                                        @csrf
+                                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-3 rounded-xl text-xs transition shadow-sm">
+                                            Yes, Item Received
+                                        </button>
+                                    </form>
+
+                                    {{-- Toggle Dispute Form Button --}}
+                                    <button type="button" onclick="toggleDisputeForm({{ $claim->item->id }})" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 px-3 rounded-xl text-xs transition">
+                                        No, Report Issue
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Hidden Dispute Reporting Textarea Box --}}
+                            <div id="dispute-box-{{ $claim->item->id }}" class="hidden mt-3 p-4 bg-white border border-red-100 rounded-xl shadow-inner">
+                                <form action="/items/{{ $claim->item->id }}/dispute" method="POST">
+                                    @csrf
+                                    <label class="block text-[11px] font-bold text-red-800 uppercase mb-1.5 tracking-wider">State Your Reason For Raising A Dispute Case:</label>
+                                    <textarea name="dispute_reason" required class="w-full p-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-red-800" rows="3" placeholder="Examples: Tracking number provided is completely invalid, Finder went uncontactable, Item arrived heavily damaged..."></textarea>
+                                    <div class="mt-2.5 flex justify-end gap-2">
+                                        <button type="button" onclick="toggleDisputeForm({{ $claim->item->id }})" class="text-xs font-bold text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-100">Cancel</button>
+                                        <button type="submit" class="bg-red-800 text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:bg-red-900 transition shadow-sm">Submit Incident Report</button>
+                                    </div>
+                                </form>
+                            </div>
+                        @endif
+
+                        {{-- Small Alert Message when Claimant Confirms but Finder is Pending --}}
+                        @if($claim->item->claimant_confirmed && !$claim->item->finder_confirmed && $claim->item->status !== 'returned')
+                            <div class="mt-3 p-2.5 bg-blue-50/50 border border-blue-100 rounded-xl text-[11px] text-blue-700 font-medium">
+                                ℹ️ You verified asset receipt. Awaiting completion response handshake signature from the Finder.
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -154,7 +211,17 @@
         @endif
 
     </div>
+
 <script>
+    function toggleDisputeForm(id) {
+        var x = document.getElementById('dispute-box-' + id);
+        if (x.classList.contains('hidden')) {
+            x.classList.remove('hidden');
+        } else {
+            x.classList.add('hidden');
+        }
+    }
+
     function confirmLogout() {
         Swal.fire({
             title: 'Are you sure?',

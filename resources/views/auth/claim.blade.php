@@ -163,7 +163,7 @@
                             <input type="radio" name="delivery_method" value="delivery" required class="text-red-800">
                             <div>
                                 <p class="text-sm font-bold text-gray-800">🚚 Delivery</p>
-                                <p class="text-xs text-gray-400 mt-0.5">Delivery fee RM 5.00</p>
+                                <p class="text-xs text-gray-400 mt-0.5">Delivery fee RM 10.00</p>
                             </div>
                         </label>
                     </div>

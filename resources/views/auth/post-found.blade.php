@@ -168,6 +168,26 @@
                             class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm @error('security_answer') border-red-400 @enderror" />
                     </div>
                 </div>
+                
+                <div class="mt-6 border-t border-gray-100 pt-6">
+    <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">🏦 Bank Information (For Delivery Transaction)</h3>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Bank Name</label>
+            <input type="text" name="bank_name" placeholder="e.g. CIMB, Maybank" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium" required>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Bank Account Number</label>
+            <input type="text" name="bank_account" placeholder="e.g. 7061xxxxxxxx" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium" required>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Upload DuitNow QR (Optional)</label>
+        <input type="file" name="bank_qr" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-red-800 hover:file:bg-red-100 border border-gray-200 rounded-xl p-2">
+    </div>
+</div>
 
                 <div class="flex gap-3 mt-6">
                     <button type="submit"

@@ -150,44 +150,15 @@
                 </div>
             </div>
 
-            {{-- Nav Actions --}}
+{{-- Nav Actions --}}
             <div class="flex items-center gap-1.5 sm:gap-3">
-
-                {{-- Notifications --}}
-                <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm relative flex items-center gap-1">
-                    🔔
-                    @if($unreadCount > 0)
-                        <span class="absolute -top-1 -right-1 bg-yellow-400 text-gray-900 text-xs font-bold rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow text-[10px]">
-                            {{ $unreadCount }}
-                        </span>
-                    @endif
-                </a>
-
-                {{-- Claims Inbox (Finder) --}}
-                <a href="/finder-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
-                    <span>📬</span>
-                    <span class="hidden sm:inline text-xs sm:text-sm">Claims Inbox</span>
-                </a>
-
-                {{-- My Claims (Claimant) --}}
+                <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm">🔔</a>
                 <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
-                    <span>🔐</span>
-                    <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
+                    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
                 </a>
-
-                {{-- Profile --}}
-                <a href="/profile" class="nav-pill glass rounded-full px-2 sm:px-3 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
-                    @if(auth()->user()->profile_photo)
-                        <img src="{{ asset('storage/' . auth()->user()->profile_photo) }}"
-                            class="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border-2 border-white" />
-                    @else
-                        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white bg-opacity-30 flex items-center justify-center text-xs">
-                            <span>👤</span>
-                        </div>
-                    @endif
-                    <span class="hidden sm:inline font-medium text-xs sm:text-sm">{{ auth()->user()->name }}</span>
+                <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                    🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
                 </a>
-
                 {{-- Logout --}}
                 <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
                     @csrf
@@ -197,6 +168,8 @@
                     <span>Logout</span>
                 </button>
 
+                <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             </div>
         </div>
     </nav>
@@ -261,46 +234,40 @@
         <div class="section-divider"></div>
 
         {{-- Summary Cards --}}
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Overview</p>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
+<p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Overview</p>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
 
-            <div class="card-texture stat-card stat-card-red rounded-2xl shadow-md p-4 sm:p-6">
-                <div class="flex items-center justify-between mb-3 sm:mb-5">
-                    <div class="bg-gradient-to-br from-red-100 to-red-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🔴</div>
-                    <span class="text-xs text-red-500 bg-red-50 px-2 sm:px-3 py-1 rounded-full font-bold border border-red-100 uppercase tracking-wider hidden sm:inline">Active</span>
-                </div>
-                <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalLost }}</p>
-                <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Active Lost Reports</p>
-                <div class="mt-3 h-1.5 bg-red-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-red-400 to-red-600 rounded-full" style="width: {{ $totalLost > 0 ? min(100, $totalLost * 10) : 5 }}%"></div>
-                </div>
-            </div>
-
-            <div class="card-texture stat-card stat-card-green rounded-2xl shadow-md p-4 sm:p-6">
-                <div class="flex items-center justify-between mb-3 sm:mb-5">
-                    <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🟢</div>
-                    <span class="text-xs text-green-600 bg-green-50 px-2 sm:px-3 py-1 rounded-full font-bold border border-green-100 uppercase tracking-wider hidden sm:inline">Posted</span>
-                </div>
-                <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalFound }}</p>
-                <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Found Items Posted</p>
-                <div class="mt-3 h-1.5 bg-green-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-green-400 to-green-600 rounded-full" style="width: {{ $totalFound > 0 ? min(100, $totalFound * 10) : 5 }}%"></div>
-                </div>
-            </div>
-
-            <div class="card-texture stat-card stat-card-yellow rounded-2xl shadow-md p-4 sm:p-6 col-span-2 md:col-span-1">
-                <div class="flex items-center justify-between mb-3 sm:mb-5">
-                    <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">✅</div>
-                    <span class="text-xs text-yellow-600 bg-yellow-50 px-2 sm:px-3 py-1 rounded-full font-bold border border-yellow-100 uppercase tracking-wider hidden sm:inline">Resolved</span>
-                </div>
-                <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalClaimed }}</p>
-                <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Items Claimed/Returned</p>
-                <div class="mt-3 h-1.5 bg-yellow-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full" style="width: {{ $totalClaimed > 0 ? min(100, $totalClaimed * 10) : 5 }}%"></div>
-                </div>
-            </div>
-
+    {{-- Kad 1: Active Lost Reports --}}
+    <div class="card-texture stat-card stat-card-red rounded-2xl shadow-md p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-3 sm:mb-5">
+            <div class="bg-gradient-to-br from-red-100 to-red-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🔴</div>
+            <span class="text-xs text-red-500 bg-red-50 px-2 sm:px-3 py-1 rounded-lg font-bold border border-red-100 uppercase tracking-wider hidden sm:inline">Active</span>
         </div>
+        <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalLost }}</p>
+        <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Active Lost Reports</p>
+    </div>
+
+    {{-- Kad 2: Found Items Posted --}}
+    <div class="card-texture stat-card stat-card-green rounded-2xl shadow-md p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-3 sm:mb-5">
+            <div class="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">🟢</div>
+            <span class="text-xs text-green-600 bg-green-50 px-2 sm:px-3 py-1 rounded-lg font-bold border border-green-100 uppercase tracking-wider hidden sm:inline">Posted</span>
+        </div>
+        <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalFound }}</p>
+        <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Found Items Posted</p>
+    </div>
+
+    {{-- Kad 3: Items Claimed/Returned --}}
+    <div class="card-texture stat-card stat-card-yellow rounded-2xl shadow-md p-4 sm:p-6 col-span-2 md:col-span-1">
+        <div class="flex items-center justify-between mb-3 sm:mb-5">
+            <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl p-2 sm:p-3 text-xl sm:text-2xl shadow-inner">✅</div>
+            <span class="text-xs text-yellow-600 bg-yellow-50 px-2 sm:px-3 py-1 rounded-lg font-bold border border-yellow-100 uppercase tracking-wider hidden sm:inline">Resolved</span>
+        </div>
+        <p class="text-3xl sm:text-5xl font-extrabold text-red-800 mb-1">{{ $totalClaimed }}</p>
+        <p class="text-xs sm:text-sm text-gray-500 font-semibold leading-tight">Items Claimed/Returned</p>
+    </div>
+
+</div>
 
         <div class="section-divider"></div>
 

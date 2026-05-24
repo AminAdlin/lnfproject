@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Item;
+use App\Models\Claim;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ItemReturnedMail;
 
 class ItemController extends Controller
 {
@@ -20,15 +23,19 @@ class ItemController extends Controller
     public function storeFound(Request $request)
     {
         $request->validate([
-            'title'             => 'required|string|max:255',
-            'description'       => 'required|string',
-            'category'          => 'required|string',
-            'location'          => 'required|string',
-            'date_reported'     => 'required|date',
-            'contact'           => 'required|string',
-            'image'             => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'category' => 'required|string',
+            'location' => 'required|string',
+            'date_reported' => 'required|date',
+            'contact' => 'required|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'security_question' => 'required|string',
-            'security_answer'   => 'required|string',
+            'security_answer' => 'required|string',
+            // Validation for finder's banking information
+            'bank_name' => 'required|string|max:100',
+            'bank_account' => 'required|string|max:50',
+            'bank_qr' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $imagePath = null;
@@ -36,28 +43,30 @@ class ItemController extends Controller
             $imagePath = $request->file('image')->store('items', 'public');
         }
 
+        $qrPath = null;
+        if ($request->hasFile('bank_qr')) {
+            $qrPath = $request->file('bank_qr')->store('bank_qrs', 'public');
+        }
+
         Item::create([
-            'user_id'           => Auth::id(),
-            'title'             => $request->title,
-            'description'       => $request->description,
-            'category'          => $request->category,
-            'location'          => $request->location,
-            'date_reported'     => $request->date_reported,
-            'contact'           => $request->contact,
-            'image'             => $imagePath,
-            'type'              => 'found',
-            'status'            => 'active',
+            'user_id' => Auth::id(),
+            'title' => $request->title,
+            'description' => $request->description,
+            'category' => $request->category,
+            'location' => $request->location,
+            'date_reported' => $request->date_reported,
+            'contact' => $request->contact,
+            'image' => $imagePath,
+            'type' => 'found',
+            'status' => 'active',
             'security_question' => $request->security_question,
-            'security_answer'   => bcrypt($request->security_answer),
+            'security_answer' => bcrypt($request->security_answer),
+            'bank_name' => $request->bank_name,
+            'bank_account' => $request->bank_account,
+            'bank_qr' => $qrPath,
         ]);
 
-        return redirect('/items')->with('status', 'Found item posted successfully!');
-    }
-
-    // Show Report Lost Item form
-    public function showReportLostForm()
-    {
-        return view('auth.report-lost');
+        return redirect('/dashboard')->with('status', 'Found item posted successfully!');
     }
 
     // Store Lost Item
@@ -117,35 +126,140 @@ class ItemController extends Controller
         return view('auth.items', compact('items'));
     }
 
-    // Mark item as Returned
+    // ==========================================
+    // DOUBLE CONFIRMATION & DISPUTE SYSTEM
+    // ==========================================
+
+    // 1. FINDER: Mark item as Handed Over / Shipped
     public function markReturned($id)
     {
         $item = Item::findOrFail($id);
 
-        if ($item->user_id !== Auth::id()) {
+        // Pastikan hanya Finder (pemilik asal post) yang boleh tekan
+        if ($item->user_id !== auth()->id()) {
+            return back()->with('error', 'Authorized access only. You are not the finder of this item.');
+        }
+
+        // Tukar status item kepada 'returned_by_finder' (Menanti pengesahan Claimant)
+        $item->status = 'returned_by_finder';
+        $item->save();
+
+        // Cari maklumat tuntutan (claim) yang telah di-approve sebelum ini untuk item tersebut
+        $approvedClaim = $item->claims()
+        ->where(function($query) {
+        $query->where('status', 'approved')
+              ->orWhere('status', 'paid');
+    })
+    ->first();
+
+        // Jika ada tuntutan yang sah, hantar emel peringatan kepada Claimant tersebut
+        if ($approvedClaim && $approvedClaim->user) {
+            $claimantEmail = $approvedClaim->user->email;
+            $claimantName = $approvedClaim->user->name;
+            $itemTitle = $item->title;
+
+            Mail::send([], [], function ($message) use ($claimantEmail, $claimantName, $itemTitle) {
+                $message->to($claimantEmail)
+                    ->subject('[UTM FoundIt] Have you received your item? 📦')
+                    ->html("
+                        <div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>
+                            <h2 style='color: #7f1d1d;'>Hello, {$claimantName}!</h2>
+                            <p>The finder has marked your item <strong>{$itemTitle}</strong> as successfully handed over or posted.</p>
+                            <p><strong>What should you do next?</strong></p>
+                            <p>If you have safely received your item, please log into <strong>UTM FoundIt</strong>, navigate to the original item post, and click the <strong>'Item Received'</strong> button to officially close this case.</p>
+                            <p style='color: #666; font-size: 12px; margin-top: 20px;'>*This is an automated system email, please do not reply directly.</p>
+                        </div>
+                    ");
+            });
+        }
+
+        return back()->with('status', 'Item marked as returned! An verification email has been sent to the claimant.');
+    }
+
+    // 2. CLAIMANT: Mark item as Received (Case Closed)
+    public function markReceived($id)
+    {
+        $item = Item::findOrFail($id);
+        
+        // Pastikan user semasa ialah Claimant yang mempunyai rekod claim bertaraf approved/paid bagi item ini
+        $isApprovedClaimant = $item->claims()
+                                   ->where('user_id', auth()->id())
+                                   ->whereIn('status', ['approved', 'paid'])
+                                   ->exists();
+
+        if (!$isApprovedClaimant) {
+            return back()->with('error', 'Unauthorized action. Only the approved claimant can confirm receipt.');
+        }
+
+        // Tukar status item kepada 'returned' (Case Closed)
+        $item->status = 'returned';
+        $item->save();
+
+        return back()->with('status', 'Case Closed! Thank you for using UTM FoundIt.');
+    }
+
+    // 3. CLAIMANT: File an Official Incident Report / Dispute
+    public function reportDispute(Request $request, $id)
+    {
+        $request->validate([
+            'dispute_reason' => 'required|string|max:500'
+        ]);
+
+        $item = Item::findOrFail($id);
+        $claim = Claim::where('item_id', $item->id)->where('user_id', Auth::id())->first();
+
+        if (!$claim) {
             return back()->with('error', 'Unauthorized action.');
         }
 
-        $item->update(['status' => 'returned']);
+        // Lock item state into an unresolved dispute status flag
+        $item->update([
+            'is_disputed' => true,
+            'dispute_reason' => $request->dispute_reason,
+            'status' => 'disputed'
+        ]);
 
-        return back()->with('status', 'Item marked as returned successfully!');
+        // Send an urgent dispute caution email warning straight to the Finder
+        try {
+            $finderEmail = $item->user->email;
+            Mail::send('emails.dispute-alert', ['item' => $item, 'reason' => $request->dispute_reason], function($message) use ($finderEmail) {
+                $message->to($finderEmail)->subject('ALERT: A Dispute Has Been Opened For Your Posted Item - UTM FoundIt');
+            });
+        } catch (\Exception $e) {}
+
+        return back()->with('status', 'Dispute report submitted. The administration team will review this transaction state shortly.');
     }
 
     // Delete own item
-    public function deleteItem($id)
-    {
-        $item = Item::findOrFail($id);
+public function deleteItem($id)
+{
+    $item = Item::findOrFail($id);
 
-        if ($item->user_id !== Auth::id()) {
-            return back()->with('error', 'Unauthorized action.');
-        }
+    // 1. LETAK NI UNTUK TEST: Dia akan stop code dan tunjuk status sebenar item tu
+    dd($item->status); 
 
-        if ($item->image) {
-            Storage::disk('public')->delete($item->image);
-        }
-
-        $item->delete();
-
-        return redirect('/items')->with('status', 'Post deleted successfully!');
+    if ($item->user_id !== Auth::id()) {
+        return back()->with('error', 'Unauthorized action.');
     }
+
+    // KEMASKINI: Sekat delete jika item sedang dalam proses tuntutan, pembayaran, atau sudah selesai
+    $restrictedStatuses = ['claimed', 'awaiting_payment', 'returned_by_finder', 'returned', 'disputed'];
+    
+    if (in_array($item->status, $restrictedStatuses)) {
+        return back()->with('error', 'Cannot delete this post. This item has an active claim process or has been settled.');
+    }
+
+    if ($item->image) {
+        Storage::disk('public')->delete($item->image);
+    }
+
+    // Clean up matching banking assets if a record file exists
+    if ($item->bank_qr) {
+        Storage::disk('public')->delete($item->bank_qr);
+    }
+
+    $item->delete();
+
+    return redirect('/items')->with('status', 'Post deleted successfully!');
+}
 }
