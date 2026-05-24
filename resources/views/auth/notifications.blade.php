@@ -122,7 +122,7 @@
 
                         {{-- Message --}}
                         <div class="bg-red-50 rounded-xl p-3 mb-3">
-                            <p class="text-xs text-red-800 font-semibold mb-1 truncate">About: {{ $notification->item->title }}</p>
+                            <p class="text-xs text-red-800 font-semibold mb-1 truncate">About: {{ $notification->item?->title ?? 'Deleted Item' }}</p>
                             <p class="text-xs sm:text-sm text-gray-700 leading-relaxed">{{ $notification->message }}</p>
                         </div>
 

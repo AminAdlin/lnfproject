@@ -234,26 +234,18 @@
                                 </form>
                             @endif
 
-                            {{-- 4. BUTTON DELETE DIKEMASKINI (Hanya untuk Tuan Post & Wajib Berstatus Active) --}}
-                            @if($isFinder)
-                                <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                                    @if($item->status === 'active')
-                                        <form action="{{ route('item.delete', $item->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');" class="w-full text-right">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-500 hover:text-red-700 font-semibold text-xs sm:text-sm transition-colors duration-200">
-                                                🗑️ Delete Post
-                                            </button>
-                                        </form>
-                                    @else
-                                        <div class="w-full text-right">
-                                            <span class="text-gray-400 text-xs sm:text-sm italic font-medium bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100 inline-block">
-                                                🔒 Post Locked ({{ ucfirst(str_replace('_', ' ', $item->status)) }})
-                                            </span>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endif
+                            {{-- 4. BUTTON DELETE DIKEMASKINI (Hanya untuk Tuan Post & Wajib Berstatus Active - ALIGN CENTER) --}}
+@if($isFinder && $item->status === 'active')
+    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-center items-center">
+        <form action="{{ route('item.delete', $item->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');" class="flex justify-center items-center">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="text-red-500 hover:text-red-700 font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition-colors duration-200 py-1 px-3 rounded-lg hover:bg-red-50">
+                🗑️ Delete Post
+            </button>
+        </form>
+    </div>
+@endif
 
                         </div>
                     </div>

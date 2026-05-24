@@ -233,33 +233,23 @@ class ItemController extends Controller
     // Delete own item
 public function deleteItem($id)
 {
+    // Cari item, kalau tak jumpa dia akan return error 404
     $item = Item::findOrFail($id);
 
-    // 1. LETAK NI UNTUK TEST: Dia akan stop code dan tunjuk status sebenar item tu
-    dd($item->status); 
-
-    if ($item->user_id !== Auth::id()) {
+    // Sekat kalau orang lain cuba ceroboh delete guna post request ghaib
+    if (auth()->id() !== $item->user_id) {
         return back()->with('error', 'Unauthorized action.');
     }
 
-    // KEMASKINI: Sekat delete jika item sedang dalam proses tuntutan, pembayaran, atau sudah selesai
-    $restrictedStatuses = ['claimed', 'awaiting_payment', 'returned_by_finder', 'returned', 'disputed'];
-    
-    if (in_array($item->status, $restrictedStatuses)) {
-        return back()->with('error', 'Cannot delete this post. This item has an active claim process or has been settled.');
-    }
 
-    if ($item->image) {
-        Storage::disk('public')->delete($item->image);
-    }
+    $item->delete(); 
 
-    // Clean up matching banking assets if a record file exists
-    if ($item->bank_qr) {
-        Storage::disk('public')->delete($item->bank_qr);
-    }
+    return back()->with('status', 'Post removed successfully from the feed!');
+}
 
-    $item->delete();
+    public function showReportLostForm()
+{
 
-    return redirect('/items')->with('status', 'Post deleted successfully!');
+    return view('auth.report-lost'); 
 }
 }

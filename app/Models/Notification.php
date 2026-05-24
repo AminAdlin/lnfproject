@@ -17,7 +17,7 @@ class Notification extends Model
 
     public function item()
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(Item::class, 'item_id')->withTrashed();
     }
 
     public function sender()
