@@ -212,6 +212,76 @@
 
                             {{-- INTERAKSI DWI-PENGESAHAN (TWO-WAY VERIFICATION) --}}
                             
+                            {{-- [POV OWNER / POSTER] PENGESAHAN TUNTUTAN/BUKTI DARIPADA FINDER --}}
+                            @if($isFinder && $item->type === 'lost' && $item->claims->where('status', 'pending')->count() > 0)
+                                <div class="mt-4 bg-red-50 border-2 border-red-200 rounded-xl p-3 shadow-inner">
+                                    <p class="text-xs font-bold text-red-900 mb-2 flex items-center gap-1">
+                                        🔍 New Found Notification / Claim Received!
+                                    </p>
+                                    
+                                    @foreach($item->claims->where('status', 'pending') as $claim)
+                                        <div class="bg-white rounded-lg p-2.5 border border-red-100 space-y-2 mb-2 last:mb-0">
+                                            <p class="text-xs text-gray-600 font-medium">
+                                                <span class="font-bold text-red-800">Finder:</span> {{ $claim->user->name ?? 'Anonymous' }}
+                                            </p>
+                                            <p class="text-xs text-gray-600 italic bg-gray-50 p-2 rounded border border-gray-100">
+                                                "{{ $claim->message ?? 'No message provided.' }}"
+                                            </p>
+                                            
+                                            {{-- Papar Gambar Bukti yang Finder Upload --}}
+                                            @if($claim->proof_image)
+                                                <div class="mt-1">
+                                                    <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Uploaded Proof Image:</p>
+                                                    <img src="{{ asset('storage/' . $claim->proof_image) }}" 
+                                                         alt="Proof Image" 
+                                                         class="w-full h-32 object-cover rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition"
+                                                         onclick="window.open(this.src)">
+                                                </div>
+                                            @endif
+
+                                            {{-- Butang Tindakan untuk Owner (Dengan Pilihan Kaedah Pemulangan) --}}
+                                            <div class="pt-2 border-t border-red-100">
+                                                <p class="text-[11px] font-bold text-gray-500 uppercase mb-2">Choose Handover Method to Approve:</p>
+                                                
+                                                <div class="grid grid-cols-5 gap-2 pt-1">
+                                                    <form method="POST" action="/claims/{{ $claim->id }}/approve" class="col-span-3 space-y-2">
+                                                        @csrf
+                                                        
+                                                        {{-- Radio Buttons Pilihan Kaedah --}}
+                                                        <div class="flex flex-col gap-1.5 mb-2">
+                                                            <label class="flex items-center gap-2 p-1.5 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer text-[11px] font-bold text-gray-700">
+                                                                <input type="radio" name="handover_method" value="pickup" required class="text-red-800 focus:ring-red-800">
+                                                                🤝 Self-Pickup
+                                                            </label>
+                                                            <label class="flex items-center gap-2 p-1.5 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer text-[11px] font-bold text-gray-700">
+                                                                <input type="radio" name="handover_method" value="delivery" required class="text-red-800 focus:ring-red-800">
+                                                                📦 Delivery
+                                                            </label>
+                                                        </div>
+
+                                                        <button type="submit" 
+                                                                onclick="return confirm('Confirm match and accept this handover method?')"
+                                                                class="w-full bg-green-600 hover:bg-green-700 text-white text-[11px] font-bold py-2 px-1 rounded-lg transition shadow-sm flex items-center justify-center gap-1">
+                                                            ✅ Approve
+                                                        </button>
+                                                    </form>
+                                                    
+                                                    {{-- Butang Reject dikekalkan di sebelah --}}
+                                                    <form method="POST" action="/claims/{{ $claim->id }}/reject" class="col-span-2 flex items-end">
+                                                        @csrf
+                                                        <button type="submit" 
+                                                                onclick="return confirm('Reject this claim if the proof does not match your item?')"
+                                                                class="w-full bg-gray-400 hover:bg-gray-500 text-white text-[11px] font-bold py-2 rounded-lg transition shadow-sm text-center h-[34px] flex items-center justify-center">
+                                                            ❌ Reject
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
                             {{-- [POV FINDER] STEP 1: Jika status 'awaiting_appointment', tunjuk form untuk Finder set Appointment --}}
                             @if($isFinder && $item->status === 'awaiting_appointment')
                                 <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-3">
@@ -258,17 +328,17 @@
                             @endif
 
                             {{-- 4. BUTTON DELETE DIKEMASKINI (Hanya untuk Tuan Post & Wajib Berstatus Active - ALIGN CENTER) --}}
-@if($isFinder && $item->status === 'active')
-    <div class="mt-4 pt-3 border-t border-gray-100 flex justify-center items-center">
-        <form action="{{ route('item.delete', $item->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');" class="flex justify-center items-center">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="text-red-500 hover:text-red-700 font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition-colors duration-200 py-1 px-3 rounded-lg hover:bg-red-50">
-                🗑️ Delete Post
-            </button>
-        </form>
-    </div>
-@endif
+                            @if($isFinder && $item->status === 'active')
+                                <div class="mt-4 pt-3 border-t border-gray-100 flex justify-center items-center">
+                                    <form action="{{ route('item.delete', $item->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');" class="flex justify-center items-center">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-500 hover:text-red-700 font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition-colors duration-200 py-1 px-3 rounded-lg hover:bg-red-50">
+                                            🗑️ Delete Post
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
 
                         </div>
                     </div>

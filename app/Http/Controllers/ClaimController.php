@@ -321,4 +321,146 @@ class ClaimController extends Controller
 
         return back()->with('status', 'Appointment successfully scheduled! Claimant has been notified via email.');
     }
+
+    public function showFoundThisForm($id)
+    {
+        $item = Item::findOrFail($id);
+
+        // Sekat kalau Owner cuba tekan borang penemuan barang milik sendiri
+        if ($item->user_id === auth()->id()) {
+            return redirect('/items')->with('error', 'You cannot claim or report finding your own item.');
+        }
+
+        return view('auth.found-this', compact('item'));
+    }
+
+    public function submitFoundThis(Request $request, $id)
+    {
+        // 1. Wajibkan proof_image di sini!
+        $request->validate([
+            'message' => 'required|string|max:500',
+            'contact' => 'required|string|max:255',
+            'proof_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Diwajibkan
+        ]);
+
+        $item = Item::findOrFail($id);
+
+        // 2. Simpan gambar bukti ke folder storage/app/public/proofs
+        if ($request->hasFile('proof_image')) {
+            $imagePath = $request->file('proof_image')->store('proofs', 'public');
+        } else {
+            return back()->with('error', 'Proof image is required.');
+        }
+
+        // 3. Create rekod claims
+        $claim = Claim::create([
+            'item_id' => $item->id,
+            'user_id' => auth()->id(), 
+            'message' => $request->message,
+            'contact' => $request->contact,
+            'proof_image' => $imagePath,
+            'status' => 'pending', 
+        ]);
+
+        // 4. Hantar EMEL BESERTA ATTACHMENT GAMBAR kepada Owner
+        try {
+            $ownerEmail = $item->user->email;
+            $ownerName = $item->user->name;
+            $finderName = auth()->user()->name;
+            $itemTitle = $item->title;
+            $finderMessage = $request->message;
+            
+            // Ambil full path gambar dari storage untuk di-attach dalam emel
+            $absoluteImagePath = storage_path('app/public/' . $imagePath);
+
+            Mail::send([], [], function ($message) use ($ownerEmail, $ownerName, $finderName, $itemTitle, $finderMessage, $absoluteImagePath) {
+                $message->to($ownerEmail)
+                    ->subject('[UTM FoundIt] 🔍 Action Required: Someone Found Your Lost Item!')
+                    ->html("
+                        <div style='font-family: Arial, sans-serif; padding: 25px; color: #333; max-width: 600px; border: 1px solid #e5e7eb; border-radius: 16px;'>
+                            <h2 style='color: #800000; margin-bottom: 20px;'>Hello, {$ownerName}!</h2>
+                            <p>Great news! <strong>{$finderName}</strong> reported that they found your lost item: <strong>{$itemTitle}</strong>.</p>
+                            
+                            <div style='background-color: #fcf6f6; border: 1px solid #f5e1e1; border-radius: 12px; padding: 15px; margin: 20px 0;'>
+                                <p style='margin: 0 0 8px 0; font-weight: bold; color: #800000;'>💬 Finder's Message:</p>
+                                <p style='margin: 0; font-style: italic; font-size: 14px; color: #555;'>\"{$finderMessage}\"</p>
+                            </div>
+
+                            <p>📸 <strong>We have attached the proof image provided by the finder to this email.</strong> Please review it carefully.</p>
+                            <p>If this is indeed your item, please click the button below to confirm ownership and choose your return method (Self Pickup or Delivery).</p>
+                            
+                            <div style='margin: 25px 0; text-align: center;'>
+                                <a href='" . url('/dashboard') . "' style='background-color: #800000; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block;'>Yes, Verify & Choose Method</a>
+                            </div>
+                            
+                            <hr style='border: 0; border-top: 1px solid #e5e7eb; margin-top: 20px;'>
+                            <p style='color: #666; font-size: 12px; margin-top: 20px;'>*This is an automated system email from UTM FoundIt. Please do not reply directly.</p>
+                        </div>
+                    ");
+                
+                // LINE MAGIC: Attach gambar bukti terus masuk dalam emel!
+                if (file_exists($absoluteImagePath)) {
+                    $message->attach($absoluteImagePath, [
+                        'as' => 'proof_image.' . pathinfo($absoluteImagePath, PATHINFO_EXTENSION),
+                        'mime' => mime_content_type($absoluteImagePath),
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            \Log::error("Gagal hantar emel beserta attachment ke Owner: " . $e->getMessage());
+        }
+
+        return redirect('/items')->with('status', 'Notification sent successfully! The owner has been notified via email with your proof image.');
+    }
+
+    public function approve(Request $request, $id)
+{
+    $request->validate([
+        'handover_method' => 'required|in:pickup,delivery'
+    ]);
+
+    $claim = Claim::findOrFail($id);
+    $item = $claim->item;
+
+    if (auth()->id() !== $item->user_id) {
+        return back()->with('error', 'Unauthorized action.');
+    }
+
+    // 1. Set status tuntutan finder ini sebagai approved
+    $claim->update(['status' => 'approved']);
+
+    // 2. Reject tuntutan orang lain secara automatik
+    $item->claims()->where('id', '!=', $id)->where('status', 'pending')->update(['status' => 'rejected']);
+
+    // 3. Aliran status ikut acuan asal kau
+    if ($request->handover_method === 'pickup') {
+        $item->update([
+            'status' => 'awaiting_appointment' // Pakai status asal kau untuk Finder set appointment
+        ]);
+        $msg = 'Claim approved! Sila tunggu Finder menetapkan temujanji (Self-Pickup).';
+    } else {
+        // Kalau delivery, kita terus anggap kes diproses/selesai mengantar
+        // Gantikan 'returned' di bawah dengan status akhir/proses pos yang kau dah ada (contoh: 'returned' atau 'returned_by_finder')
+        $item->update([
+            'status' => 'returned' 
+        ]);
+        $msg = 'Claim approved via Delivery! Urusan seterusnya boleh diteruskan di luar platform.';
+    }
+
+    return back()->with('status', $msg);
+}
+
+public function reject($id)
+{
+    $claim = Claim::findOrFail($id);
+    
+    if (auth()->id() !== $claim->item->user_id) {
+        return back()->with('error', 'Unauthorized action.');
+    }
+
+    // Tukar status tuntutan kepada rejected
+    $claim->update(['status' => 'rejected']);
+
+    return back()->with('status', 'Claim rejected successfully.');
+}
 }

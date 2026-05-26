@@ -252,4 +252,33 @@ public function deleteItem($id)
 
     return view('auth.report-lost'); 
 }
+
+public function submitAddress(Request $request, $id)
+{
+    $item = Item::findOrFail($id);
+    if (auth()->id() !== $item->user_id) { abort(403); }
+
+    $item->update([
+        'delivery_address' => $request->delivery_address,
+        'status' => 'awaiting_delivery' // Tukar status supaya Finder boleh nampak alamat & butang tracking
+    ]);
+
+    return back()->with('status', 'Address updated! Finder has been notified to ship the item.');
+}
+
+public function submitTracking(Request $request, $id)
+{
+    $item = Item::findOrFail($id);
+    
+    // Pastikan user adalah finder yang telah di-approve
+    $isApproved = $item->claims()->where('user_id', auth()->id())->where('status', 'approved')->exists();
+    if (!$isApproved) { abort(403); }
+
+    $item->update([
+        'tracking_number' => $request->tracking_number,
+        'status' => 'returned_by_finder' // Tukar ke status sedia ada kau supaya Owner boleh klik "Item Received"
+    ]);
+
+    return back()->with('status', 'Tracking info submitted successfully! Case pending Owner confirmation.');
+}
 }

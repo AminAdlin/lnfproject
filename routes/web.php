@@ -127,4 +127,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'showProfile']);
     Route::post('/profile/update', [ProfileController::class, 'updateProfile']);
     Route::post('/profile/password', [ProfileController::class, 'updatePassword']);
+
+    // 8. Finder to Owner Logic
+    Route::get('/items/{id}/found-this', [\App\Http\Controllers\ClaimController::class, 'showFoundThisForm'])->name('items.found-this');
+    Route::post('/items/{id}/found-this', [\App\Http\Controllers\ClaimController::class, 'submitFoundThis']);
+    Route::post('/claims/{id}/approve', [ClaimController::class, 'approve'])->middleware('auth');
+    Route::post('/claims/{id}/reject', [ClaimController::class, 'reject'])->middleware('auth');
+    Route::post('/items/{id}/submit-address', [ItemController::class, 'submitAddress'])->middleware('auth');
+    Route::post('/items/{id}/submit-tracking', [ItemController::class, 'submitTracking'])->middleware('auth');
 });

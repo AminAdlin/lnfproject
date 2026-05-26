@@ -14,6 +14,16 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
+        .navbar-texture {
+            background: linear-gradient(135deg, #6b1414 0%, #7f1d1d 30%, #991b1b 60%, #b91c1c 100%);
+            box-shadow: 0 4px 20px rgba(127,29,29,0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .banner-texture {
+            background-image:
+                url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E"),
+                linear-gradient(135deg, #6b1414 0%, #7f1d1d 30%, #991b1b 60%, #b91c1c 100%);
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -97,7 +107,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="/items/{{ $item->id }}/found-this">
+            <form method="POST" action="/items/{{ $item->id }}/found-this" enctype="multipart/form-data">
                 @csrf
 
                 {{-- Message --}}
@@ -109,6 +119,14 @@
                         class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm">{{ old('message') }}</textarea>
                     <p class="text-xs text-gray-400 mt-1">Max 500 characters</p>
                 </div>
+                
+                {{-- Input Gambar Bukti yang Diwajibkan (Required) --}}
+            <div class="mb-5">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Proof Image <span class="text-red-600">*</span></label>
+                <input type="file" name="proof_image" accept="image/*" required
+                    class="w-full text-xs text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-800 hover:file:bg-red-100 border border-gray-200 rounded-xl p-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-800" />
+            <p class="text-xs text-gray-400 mt-1">Please upload a clear photo of the item you found. This is mandatory to prevent false claims.</p>
+            </div> 
 
                 {{-- Contact --}}
                 <div class="mb-6">

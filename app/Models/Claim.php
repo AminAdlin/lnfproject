@@ -12,7 +12,12 @@ class Claim extends Model
         'answer',
         'delivery_method',
         'status',
-        'payment_receipt'
+        'appointment_date',
+        'appointment_location',
+        'payment_receipt',
+        'message',       
+        'contact',       
+        'proof_image',
     ];
 
     public function item()
