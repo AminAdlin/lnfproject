@@ -135,7 +135,8 @@
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Date Found</label>
                     <input type="date" name="date_reported" value="{{ old('date_reported') }}" required
-                        class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm @error('date_reported') border-red-400 @enderror" />
+                    max="{{ date('Y-m-d') }}"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm @error('date_reported') border-red-400 @enderror" />
                 </div>
 
                 <div class="mb-4">
@@ -179,7 +180,16 @@
         </div>
         <div>
             <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Bank Account Number</label>
-            <input type="text" name="bank_account" placeholder="e.g. 7061xxxxxxxx" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium" required>
+            <input type="text" 
+            name="bank_account" 
+            value="{{ old('bank_account') }}"
+            placeholder="e.g. 7061xxxxxxxx" 
+            inputmode="numeric"
+            pattern="[0-9]{10,16}"
+            maxlength="16"
+            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 16);"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium @error('bank_account') border-red-400 @enderror" 
+            required>
         </div>
     </div>
 

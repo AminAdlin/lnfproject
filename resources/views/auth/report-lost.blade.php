@@ -135,8 +135,9 @@
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Date Lost</label>
                     <input type="date" name="date_reported" value="{{ old('date_reported') }}" required
+                        max="{{ date('Y-m-d') }}"
                         class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm @error('date_reported') border-red-400 @enderror" />
-                </div>
+                    </div>
 
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Contact Info</label>
