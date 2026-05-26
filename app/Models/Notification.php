@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
+    protected $table = 'notifications';
+
     protected $fillable = [
         'item_id',
         'sender_id',
@@ -17,7 +19,7 @@ class Notification extends Model
 
     public function item()
     {
-        return $this->belongsTo(Item::class, 'item_id')->withTrashed();
+        return $this->belongsTo(Item::class);
     }
 
     public function sender()
