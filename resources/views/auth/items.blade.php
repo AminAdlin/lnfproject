@@ -199,18 +199,41 @@
                                 @endif
                             @endif
 
-                            {{-- 2. STATUS BADGES REKA BENTUK ASAL --}}
+                            {{-- 2. STATUS BADGES & APPOINTMENT DESIGN --}}
                             @if($item->status === 'returned')
                                 <div class="w-full text-center text-xs sm:text-sm text-gray-400 py-2.5 bg-gray-50 rounded-xl border border-gray-100 mb-2 font-semibold">✅ Case Closed</div>
+                            @elseif($item->status === 'awaiting_appointment')
+                                <div class="w-full text-center text-xs sm:text-sm text-orange-600 py-2.5 bg-orange-50 rounded-xl border border-orange-100 mb-2 font-semibold">📅 Awaiting Appointment Schedule</div>
                             @elseif($item->status === 'claimed')
-                                <div class="w-full text-center text-xs sm:text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">⏳ Claimed — Pending Review</div>
+                                <div class="w-full text-center text-xs sm:text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">⏳ Claimed — Appointment Set</div>
                             @elseif($item->status === 'returned_by_finder')
                                 <div class="w-full text-center text-xs sm:text-sm text-blue-600 py-2.5 bg-blue-50 rounded-xl border border-blue-100 mb-2 font-semibold">📦 Handed Over — Awaiting Confirmation</div>
                             @endif
 
-                            {{-- 3. INTERAKSI DWI-PENGESAHAN (TWO-WAY VERIFICATION) BARU --}}
+                            {{-- INTERAKSI DWI-PENGESAHAN (TWO-WAY VERIFICATION) --}}
                             
-                            {{-- [POV FINDER] - Button Merah "Mark as Returned" apabila status item dituntut (claimed) --}}
+                            {{-- [POV FINDER] STEP 1: Jika status 'awaiting_appointment', tunjuk form untuk Finder set Appointment --}}
+                            @if($isFinder && $item->status === 'awaiting_appointment')
+                                <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-3">
+                                    <p class="text-xs font-bold text-red-800 mb-2 flex items-center gap-1">📅 Set Handover Appointment</p>
+                                    <form method="POST" action="{{ route('items.appointment', $item->id) }}" class="space-y-2">
+                                        @csrf
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Date & Time</label>
+                                            <input type="datetime-local" name="appointment_date" min="{{ now()->format('Y-m-d\TH:i') }}" required class="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-800 font-medium">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Meeting Location</label>
+                                            <input type="text" name="appointment_location" placeholder="e.g. FSKTM Block A / Library CICT" required class="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-800 font-medium">
+                                        </div>
+                                        <button type="submit" class="w-full bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-xs sm:text-sm font-bold py-2.5 px-4 rounded-xl transition mb-2 shadow-md">
+                                            Confirm & Notify Claimant
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+
+                            {{-- [POV FINDER] STEP 2: Button Merah "Mark as Returned" hanya keluar bila status 'claimed' (Lepas dah set appointment) --}}
                             @if($isFinder && $item->status === 'claimed')
                                 <form method="POST" action="/items/{{ $item->id }}/returned">
                                     @csrf
@@ -222,7 +245,7 @@
                                 </form>
                             @endif
 
-                            {{-- [POV CLAIMANT] - Button Hijau "Item Received" apabila Finder sudah serah barang --}}
+                            {{-- [POV CLAIMANT] STEP 3: Button Hijau "Item Received" apabila Finder sudah serah barang --}}
                             @if($isApprovedClaimant && $item->status === 'returned_by_finder')
                                 <form method="POST" action="/items/{{ $item->id }}/received">
                                     @csrf

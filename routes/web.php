@@ -95,8 +95,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/post-found', [ItemController::class, 'storeFound']);
     Route::get('/report-lost', [ItemController::class, 'showReportLostForm']);
     Route::post('/report-lost', [ItemController::class, 'storeLost']);
-    
-    // BARIS WAJIB: Pastikan baris bawah ni ada dan ejaannya betul!
+    Route::post('/items/{id}/appointment', [\App\Http\Controllers\ClaimController::class, 'storeAppointment'])->name('items.appointment');
+
     Route::delete('/items/{id}', [ItemController::class, 'deleteItem'])->name('item.delete');
     
     // KAWALAN UTAMAl DOUBLE CONFIRMATION FLOW

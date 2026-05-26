@@ -74,16 +74,57 @@ class ClaimController extends Controller
             'status' => 'pending',
         ]);
 
-        // Jika Self-pickup, terus set status item kepada 'claimed' (Pending Review)
+        // =========================================================================
+        // JIKA SELF-PICKUP: Hantar Emel Temu Janji Ke Finder & Set Status 'claimed'
+        // =========================================================================
         if ($request->delivery_method === 'self_pickup') {
-            $item->update(['status' => 'claimed']);
-            return redirect('/items')->with('status', 'Claim request (Self-Pickup) submitted successfully!');
+            $item->update(['status' => 'awaiting_appointment']);
+
+            // Ambil data untuk dihantar dalam emel
+            $finderEmail = $item->user->email;
+            $finderName = $item->user->name;
+            $claimantName = auth()->user()->name;
+            $itemTitle = $item->title;
+            $itemUrl = url('/items/');
+
+            try {
+                Mail::send([], [], function ($message) use ($finderEmail, $finderName, $claimantName, $itemTitle, $itemUrl) {
+                    $message->to($finderEmail)
+                        ->subject('[UTM FoundIt] 📅 Action Required: Set Pickup Appointment for ' . $itemTitle)
+                        ->html("
+                            <div style='font-family: Arial, sans-serif; padding: 25px; color: #333; max-width: 600px; border: 1px solid #e5e7eb; border-radius: 16px;'>
+                                <h2 style='color: #800000; margin-bottom: 20px;'>Hello, {$finderName}!</h2>
+                                <p>Good news! <strong>{$claimantName}</strong> has successfully answered your security question and claimed the item you found: <strong>{$itemTitle}</strong>.</p>
+                                
+                                <p>Since the claimant selected <strong>🏃 Self Pickup</strong> as their recovery method, you are required to arrange the handover.</p>
+                                
+                                <div style='background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 15px; margin: 20px 0;'>
+                                    <p style='margin: 0; font-weight: bold; color: #991b1b;'>What should you do next?</p>
+                                    <p style='margin: 5px 0 0 0; font-size: 14px; color: #7f1d1d;'>Please log into <strong>UTM FoundIt</strong>, navigate to your original post, and coordinate with the claimant to set up the appointment date, time, and location.</p>
+                                </div>
+
+                                <p style='margin-top: 30px; margin-bottom: 30px;'>
+                                    <a href='{$itemUrl}' style='background-color: #800000; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;'>
+                                        Go to Original Post
+                                    </a>
+                                </p>
+
+                                <hr style='border: 0; border-top: 1px solid #e5e7eb; margin-top: 20px;'>
+                                <p style='color: #666; font-size: 12px; margin-top: 20px;'>*This is an automated system email from UTM FoundIt. Please do not reply directly to this message.</p>
+                            </div>
+                        ");
+                });
+            } catch (\Exception $e) {
+                \Log::error("Gagal hantar email appointment ke Finder: " . $e->getMessage());
+            }
+
+            return redirect('/items')->with('status', 'Claim request (Self-Pickup) submitted successfully! Finder has been notified via email to set an appointment.');
         }
 
         // Jika delivery, bawa ke fasa payment dulu
         $item->update(['status' => 'awaiting_payment']);
 
-        // Send notification email to the Finder
+        // Send notification email to the Finder (Untuk kes delivery)
         try {
             Mail::to($item->user->email)->send(new ClaimNotificationMail($claim));
         } catch (\Exception $e) {}
@@ -213,5 +254,71 @@ class ClaimController extends Controller
         }
 
         return redirect('/dashboard')->with('status', 'Payment submitted and Finder notified!');
+    }
+
+    // Finder save appointment details & send email to claimant
+    public function storeAppointment(Request $request, $itemId)
+    {
+        $request->validate([
+            'appointment_date' => 'required|date|after:now',
+            'appointment_location' => 'required|string|max:255',
+        ]);
+
+        $item = Item::findOrFail($itemId);
+
+        if ($item->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorized action.');
+        }
+
+        // Cari claim yang bertaraf pending bagi item ini
+        $claim = Claim::where('item_id', $item->id)->where('status', 'pending')->first();
+
+        if (!$claim) {
+            return back()->with('error', 'No active claim found for this item.');
+        }
+
+        // Simpan data ke dalam table claims dan up status ke approved
+        $claim->update([
+            'appointment_date' => $request->appointment_date,
+            'appointment_location' => $request->appointment_location,
+            'status' => 'approved'
+        ]);
+
+        // Tukar status item kepada 'claimed' supaya Finder boleh tekan 'Mark as Returned' lepas ni
+        $item->update(['status' => 'claimed']);
+
+        // Hantar emel butiran appointment kepada Claimant
+        try {
+            $claimantEmail = $claim->user->email;
+            $claimantName = $claim->user->name;
+            $itemTitle = $item->title;
+            $appDate = \Carbon\Carbon::parse($request->appointment_date)->format('d-m-Y (h:i A)');
+            $appLoc = $request->appointment_location;
+
+            Mail::send([], [], function ($message) use ($claimantEmail, $claimantName, $itemTitle, $appDate, $appLoc) {
+                $message->to($claimantEmail)
+                    ->subject('[UTM FoundIt] 🗓️ Appointment Confirmed for Your Claim!')
+                    ->html("
+                        <div style='font-family: Arial, sans-serif; padding: 25px; color: #333; max-width: 600px; border: 1px solid #e5e7eb; border-radius: 16px;'>
+                            <h2 style='color: #15803d; margin-bottom: 20px;'>Hello, {$claimantName}!</h2>
+                            <p>The finder has set a pickup appointment for your claimed item: <strong>{$itemTitle}</strong>.</p>
+                            
+                            <div style='background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 15px; margin: 20px 0;'>
+                                <p style='margin: 0 0 8px 0; font-weight: bold; color: #166534;'>📍 Appointment Details:</p>
+                                <p style='margin: 4px 0; font-size: 14px;'><strong>Date & Time:</strong> {$appDate}</p>
+                                <p style='margin: 4px 0; font-size: 14px;'><strong>Location:</strong> {$appLoc}</p>
+                            </div>
+
+                            <p>Please meet the finder at the designated time and place. Once you have successfully received your item, remember to log in and confirm receipt!</p>
+                            <hr style='border: 0; border-top: 1px solid #e5e7eb; margin-top: 20px;'>
+                            <p style='color: #666; font-size: 12px; margin-top: 20px;'>*This is an automated system email from UTM FoundIt. Please do not reply directly.</p>
+                        </div>
+                    ");
+            });
+        } catch (\Exception $e) {
+            \Log::error("Gagal hantar email appointment detail ke Claimant: " . $e->getMessage());
+        }
+
+        return back()->with('status', 'Appointment successfully scheduled! Claimant has been notified via email.');
     }
 }
