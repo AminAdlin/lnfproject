@@ -14,10 +14,15 @@ class ClaimNotificationMail extends Mailable
     use Queueable, SerializesModels;
 
     public $claim;
+    public $details;
+    public $scenario;
+    
 
-    public function __construct(Claim $claim)
+    public function __construct(Claim $claim, $details, $scenario)
     {
         $this->claim = $claim;
+        $this->details = $details;
+        $this->scenario = $scenario; 
     }
 
     public function envelope(): Envelope

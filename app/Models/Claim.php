@@ -18,6 +18,10 @@ class Claim extends Model
         'message',       
         'contact',       
         'proof_image',
+        'is_delivery_ready',
+        'bank_name',
+        'account_number',
+        'payment_receipt_image',
     ];
 
     public function item()

@@ -7,132 +7,585 @@ use App\Models\Item;
 use App\Models\Claim;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ClaimNotificationMail;
 use App\Mail\ClaimStatusMail;
-use App\Mail\PaymentReceiptMail;
-
 class ClaimController extends Controller
 {
-    // Show claim form
+    /*
+    |--------------------------------------------------------------------------
+    | ROLE HELPER
+    |--------------------------------------------------------------------------
+    | FOUND POST  → Finder = post creator ($item->user), Owner = claimant ($claim->user)
+    | LOST POST   → Owner  = post creator ($item->user), Finder = claimant ($claim->user)
+    |--------------------------------------------------------------------------
+    */
+    private function resolveRoles(Item $item, Claim $claim): array
+    {
+        if ($item->type === 'found') {
+            return [
+                'finder_user' => $item->user,
+                'owner_user'  => $claim->user,
+            ];
+        }
+
+        return [
+            'finder_user' => $claim->user,
+            'owner_user'  => $item->user,
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SCENARIO A — FOUND POST
+    | Amin jumpa barang → post Found Item
+    | Azri nak claim → jawab security question → pilih method → proceed
+    |--------------------------------------------------------------------------
+    */
+
     public function showClaimForm($id)
     {
         $item = Item::findOrFail($id);
 
         if ($item->type !== 'found') {
-            return back()->with('error', 'This item cannot be claimed.');
+            return back()->with('error', 'This item cannot be claimed here.');
         }
-
         if ($item->user_id === auth()->id()) {
             return back()->with('error', 'You cannot claim your own post.');
         }
-
-        if ($item->status === 'returned') {
-            return back()->with('error', 'This item has already been returned.');
+        if ($item->status !== 'active') {
+            return back()->with('error', 'This item is no longer available for claiming.');
         }
-
-        $existingClaim = Claim::where('item_id', $id)
-                              ->where('user_id', auth()->id())
-                              ->first();
-
-        if ($existingClaim) {
+        if (Claim::where('item_id', $id)->where('user_id', auth()->id())->exists()) {
             return back()->with('error', 'You have already submitted a claim for this item.');
         }
 
         return view('auth.claim', compact('item'));
     }
 
-    // AJAX Check Security Answer
     public function checkSecurityAnswer(Request $request, $id)
     {
         $item = Item::findOrFail($id);
-        
+
         if (password_verify($request->answer, $item->security_answer)) {
             return response()->json(['success' => true]);
         }
-        
+
         return response()->json(['success' => false, 'message' => 'Incorrect answer. Please try again.']);
     }
 
-    // Submit claim
+    /**
+     * Azri jawab security question betul → claim terus APPROVED
+     * Delivery  → redirect ke payment page
+     * Pickup    → email Amin untuk set appointment, redirect ke items
+     */
     public function submitClaim(Request $request, $id)
     {
         $item = Item::with('user')->findOrFail($id);
+
         $request->validate([
-            'answer' => 'required|string',
+            'answer'          => 'required|string',
             'delivery_method' => 'required|in:self_pickup,delivery',
         ]);
 
+        // Security question must be correct
         if (!password_verify($request->answer, $item->security_answer)) {
-            return back()->withErrors(['answer' => 'Invalid security answer.'])->withInput();
+            return back()->withErrors(['answer' => 'Incorrect answer. Please try again.'])->withInput();
         }
 
+        // Create claim — auto approved (security Q is the verification)
         $claim = Claim::create([
-            'item_id' => $item->id,
-            'user_id' => auth()->id(),
-            'answer' => $request->answer,
+            'item_id'         => $item->id,
+            'user_id'         => auth()->id(),
+            'answer'          => $request->answer,
             'delivery_method' => $request->delivery_method,
-            'status' => 'pending',
+            'status'          => 'approved',
         ]);
 
-        // =========================================================================
-        // JIKA SELF-PICKUP: Hantar Emel Temu Janji Ke Finder & Set Status 'claimed'
-        // =========================================================================
-        if ($request->delivery_method === 'self_pickup') {
-            $item->update(['status' => 'awaiting_appointment']);
+        if ($request->delivery_method === 'delivery') {
+            // Update item status → awaiting payment
+            $item->update(['status' => 'awaiting_payment']);
 
-            // Ambil data untuk dihantar dalam emel
-            $finderEmail = $item->user->email;
-            $finderName = $item->user->name;
-            $claimantName = auth()->user()->name;
-            $itemTitle = $item->title;
-            $itemUrl = url('/items/');
-
-            try {
-                Mail::send([], [], function ($message) use ($finderEmail, $finderName, $claimantName, $itemTitle, $itemUrl) {
-                    $message->to($finderEmail)
-                        ->subject('[UTM FoundIt] 📅 Action Required: Set Pickup Appointment for ' . $itemTitle)
-                        ->html("
-                            <div style='font-family: Arial, sans-serif; padding: 25px; color: #333; max-width: 600px; border: 1px solid #e5e7eb; border-radius: 16px;'>
-                                <h2 style='color: #800000; margin-bottom: 20px;'>Hello, {$finderName}!</h2>
-                                <p>Good news! <strong>{$claimantName}</strong> has successfully answered your security question and claimed the item you found: <strong>{$itemTitle}</strong>.</p>
-                                
-                                <p>Since the claimant selected <strong>🏃 Self Pickup</strong> as their recovery method, you are required to arrange the handover.</p>
-                                
-                                <div style='background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 15px; margin: 20px 0;'>
-                                    <p style='margin: 0; font-weight: bold; color: #991b1b;'>What should you do next?</p>
-                                    <p style='margin: 5px 0 0 0; font-size: 14px; color: #7f1d1d;'>Please log into <strong>UTM FoundIt</strong>, navigate to your original post, and coordinate with the claimant to set up the appointment date, time, and location.</p>
-                                </div>
-
-                                <p style='margin-top: 30px; margin-bottom: 30px;'>
-                                    <a href='{$itemUrl}' style='background-color: #800000; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;'>
-                                        Go to Original Post
-                                    </a>
-                                </p>
-
-                                <hr style='border: 0; border-top: 1px solid #e5e7eb; margin-top: 20px;'>
-                                <p style='color: #666; font-size: 12px; margin-top: 20px;'>*This is an automated system email from UTM FoundIt. Please do not reply directly to this message.</p>
-                            </div>
-                        ");
-                });
-            } catch (\Exception $e) {
-                \Log::error("Gagal hantar email appointment ke Finder: " . $e->getMessage());
-            }
-
-            return redirect('/items')->with('status', 'Claim request (Self-Pickup) submitted successfully! Finder has been notified via email to set an appointment.');
+            // Redirect Azri to payment page
+            return redirect()->route('claim.payment', $claim->id);
         }
 
-        // Jika delivery, bawa ke fasa payment dulu
-        $item->update(['status' => 'awaiting_payment']);
+        // Self-pickup → email Amin to set appointment
+        $item->update(['status' => 'awaiting_appointment']);
 
-        // Send notification email to the Finder (Untuk kes delivery)
         try {
-            Mail::to($item->user->email)->send(new ClaimNotificationMail($claim));
-        } catch (\Exception $e) {}
+            $finderName  = $item->user->name;
+            $finderEmail = $item->user->email;
+            $ownerName   = auth()->user()->name;
+            $itemTitle   = $item->title;
 
-        return redirect()->route('claim.payment', $claim->id);
+            Mail::send([], [], function ($msg) use ($finderEmail, $finderName, $ownerName, $itemTitle, $item) {
+                $msg->to($finderEmail)
+                    ->subject('[UTM FoundIt] Action Required: Set Pickup Appointment for ' . $itemTitle)
+                    ->html("
+                        <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                            <h2 style='color:#800000;'>Hello, {$finderName}!</h2>
+                            <p>Good news! <strong>{$ownerName}</strong> has successfully verified ownership and claimed your found item: <strong>{$itemTitle}</strong>.</p>
+                            <p>They chose <strong>Self Pickup</strong>. Please log in and set an appointment date, time, and location so they can collect it.</p>
+                            <p>
+                                <a href='" . url('/items') . "' style='background:#800000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;'>
+                                    Set Appointment Now
+                                </a>
+                            </p>
+                            <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                        </div>
+                    ");
+            });
+        } catch (\Exception $e) {
+            \Log::error('submitClaim pickup email to Finder failed: ' . $e->getMessage());
+        }
+
+        return redirect('/items')->with('status', 'Claim successful! The finder has been notified to set a pickup appointment.');
     }
 
-    // My claims page (claimant)
+    /*
+    |--------------------------------------------------------------------------
+    | PAYMENT PAGE — Scenario A Delivery
+    | Azri uploads receipt → email Amin
+    |--------------------------------------------------------------------------
+    */
+
+    public function showPayment($claimId)
+    {
+        $claim = Claim::with(['item.user', 'user'])->findOrFail($claimId);
+
+        // Only the owner (Azri) may view this
+        if (auth()->id() !== $claim->user_id) {
+            return redirect('/items')->with('error', 'Unauthorised access.');
+        }
+
+        if ($claim->delivery_method !== 'delivery') {
+            return redirect('/items')->with('error', 'This claim does not require payment.');
+        }
+
+        return view('auth.payment', compact('claim'));
+    }
+
+    public function uploadReceipt(Request $request, $claimId)
+    {
+        $request->validate([
+            'shipping_address'      => 'required|string',
+            'payment_receipt_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $claim = Claim::with(['item.user', 'user'])->findOrFail($claimId);
+        $item  = $claim->item;
+
+        ['owner_user' => $ownerUser, 'finder_user' => $finderUser] = $this->resolveRoles($item, $claim);
+
+        // Only Owner (Azri) may upload
+        if (auth()->id() !== $ownerUser->id) {
+            return back()->with('error', 'Only the item owner can submit payment.');
+        }
+
+        $path = $request->file('payment_receipt_image')->store('receipts', 'public');
+
+        $claim->update([
+            'payment_receipt'  => $path,
+            'shipping_address' => $request->shipping_address,
+        ]);
+
+        // Now Amin needs to ship → status: claimed
+        $item->update(['status' => 'claimed']);
+
+        // Email Amin: receipt received, please ship
+        try {
+            $absPath     = storage_path('app/public/' . $path);
+            $finderEmail = $finderUser->email;
+            $finderName  = $finderUser->name;
+            $ownerName   = $ownerUser->name;
+            $itemTitle   = $item->title;
+            $address     = $request->shipping_address;
+
+            Mail::send([], [], function ($msg) use ($finderEmail, $finderName, $ownerName, $itemTitle, $address, $absPath) {
+                $msg->to($finderEmail)
+                    ->subject('[UTM FoundIt] Payment Received — Please Ship ' . $itemTitle)
+                    ->html("
+                        <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                            <h2 style='color:#800000;'>Hello, {$finderName}!</h2>
+                            <p><strong>{$ownerName}</strong> has uploaded the RM10 postage payment receipt for <strong>{$itemTitle}</strong>.</p>
+                            <div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:15px;margin:20px 0;'>
+                                <p style='margin:0 0 6px;font-weight:bold;color:#166534;'>Ship to this address:</p>
+                                <p style='margin:0;font-size:14px;'>{$address}</p>
+                            </div>
+                            <p>Please ship the item, then log in and click <strong>Mark as Returned / Shipped</strong>.</p>
+                            <p>
+                                <a href='" . url('/items') . "' style='background:#800000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;'>
+                                    Go to Items
+                                </a>
+                            </p>
+                            <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                        </div>
+                    ");
+
+                if (file_exists($absPath)) {
+                    $msg->attach($absPath, [
+                        'as'   => 'receipt.' . pathinfo($absPath, PATHINFO_EXTENSION),
+                        'mime' => mime_content_type($absPath),
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            \Log::error('uploadReceipt email to Finder failed: ' . $e->getMessage());
+        }
+
+        return redirect('/items')->with('status', 'Payment submitted! The finder has been notified to ship your item.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | APPOINTMENT — Amin sets date, time, location (Pickup only)
+    | Triggered from items.blade when status = awaiting_appointment
+    |--------------------------------------------------------------------------
+    */
+
+    public function storeAppointment(Request $request, $itemId)
+    {
+        $request->validate([
+            'appointment_date'     => 'required|date|after:now',
+            'appointment_location' => 'required|string|max:255',
+        ]);
+
+        $item = Item::findOrFail($itemId);
+
+        $claim = Claim::where('item_id', $item->id)
+                      ->where('status', 'approved')
+                      ->latest()
+                      ->firstOrFail();
+
+        ['finder_user' => $finderUser, 'owner_user' => $ownerUser] = $this->resolveRoles($item, $claim);
+
+        // Only Finder (Amin) sets appointment
+        if (auth()->id() !== $finderUser->id) {
+            return back()->with('error', 'Only the finder can set the appointment.');
+        }
+
+        $claim->update([
+            'appointment_date'     => $request->appointment_date,
+            'appointment_location' => $request->appointment_location,
+        ]);
+
+        $item->update(['status' => 'claimed']);
+
+        // Email Azri: appointment confirmed, please show up
+        try {
+            $appDate    = \Carbon\Carbon::parse($request->appointment_date)->format('d M Y, h:i A');
+            $appLoc     = $request->appointment_location;
+            $ownerEmail = $ownerUser->email;
+            $ownerName  = $ownerUser->name;
+            $itemTitle  = $item->title;
+
+            Mail::send([], [], function ($msg) use ($ownerEmail, $ownerName, $itemTitle, $appDate, $appLoc) {
+                $msg->to($ownerEmail)
+                    ->subject('[UTM FoundIt] Pickup Appointment Set for: ' . $itemTitle)
+                    ->html("
+                        <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                            <h2 style='color:#15803d;'>Hello, {$ownerName}!</h2>
+                            <p>Your pickup appointment for <strong>{$itemTitle}</strong> has been confirmed.</p>
+                            <div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:15px;margin:20px 0;'>
+                                <p style='margin:0 0 8px;font-weight:bold;color:#166534;'>Appointment Details:</p>
+                                <p style='margin:4px 0;'>📅 <strong>Date & Time:</strong> {$appDate}</p>
+                                <p style='margin:4px 0;'>📍 <strong>Location:</strong> {$appLoc}</p>
+                            </div>
+                            <p>Please be on time. After collecting your item, log in and click <strong>Item Received</strong> to close the case.</p>
+                            <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                        </div>
+                    ");
+            });
+        } catch (\Exception $e) {
+            \Log::error('storeAppointment email to Owner failed: ' . $e->getMessage());
+        }
+
+        return back()->with('status', 'Appointment set! ' . $ownerUser->name . ' has been notified.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | TWO-STEP HANDOVER
+    | Step 1 — Amin: Mark as Returned  → status: returned_by_finder
+    | Step 2 — Azri: Item Received     → status: returned (Case Closed)
+    |--------------------------------------------------------------------------
+    */
+
+    public function markReturnedByFinder($itemId)
+    {
+        $item  = Item::findOrFail($itemId);
+        $claim = Claim::where('item_id', $item->id)
+                      ->where('status', 'approved')
+                      ->latest()
+                      ->firstOrFail();
+
+        ['finder_user' => $finderUser, 'owner_user' => $ownerUser] = $this->resolveRoles($item, $claim);
+
+        if (auth()->id() !== $finderUser->id) {
+            return back()->with('error', 'Only the finder can mark this step.');
+        }
+
+        if ($item->status !== 'claimed') {
+            return back()->with('error', 'Item is not in the correct state for this action.');
+        }
+
+        $item->update(['status' => 'returned_by_finder']);
+
+        // Email Azri: item handed over / shipped, please confirm receipt
+        try {
+            Mail::send([], [], function ($msg) use ($ownerUser, $item) {
+                $msg->to($ownerUser->email)
+                    ->subject('[UTM FoundIt] Your Item Has Been Handed Over — Please Confirm: ' . $item->title)
+                    ->html("
+                        <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                            <h2 style='color:#800000;'>Hello, {$ownerUser->name}!</h2>
+                            <p>The finder has marked <strong>{$item->title}</strong> as handed over / shipped.</p>
+                            <p>Once you have physically received the item, please log in and click <strong>Item Received</strong> to officially close the case.</p>
+                            <p>
+                                <a href='" . url('/items') . "' style='background:#800000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;'>
+                                    Confirm Receipt
+                                </a>
+                            </p>
+                            <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                        </div>
+                    ");
+            });
+        } catch (\Exception $e) {
+            \Log::error('markReturnedByFinder email failed: ' . $e->getMessage());
+        }
+
+        return back()->with('status', 'Item marked as handed over! Waiting for ' . $ownerUser->name . ' to confirm receipt.');
+    }
+
+    public function confirmItemReceived($itemId)
+    {
+        $item  = Item::findOrFail($itemId);
+        $claim = Claim::where('item_id', $item->id)
+                      ->where('status', 'approved')
+                      ->latest()
+                      ->firstOrFail();
+
+        ['finder_user' => $finderUser, 'owner_user' => $ownerUser] = $this->resolveRoles($item, $claim);
+
+        if (auth()->id() !== $ownerUser->id) {
+            return back()->with('error', 'Only the item owner can confirm receipt.');
+        }
+
+        if ($item->status !== 'returned_by_finder') {
+            return back()->with('error', 'Item has not been marked as handed over yet.');
+        }
+
+        $item->update(['status' => 'returned']);
+        $claim->update(['status' => 'closed']);
+
+        // Email Amin: case closed, thank you
+        try {
+            Mail::send([], [], function ($msg) use ($finderUser, $ownerUser, $item) {
+                $msg->to($finderUser->email)
+                    ->subject('[UTM FoundIt] Case Closed — Thank You! ' . $item->title)
+                    ->html("
+                        <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                            <h2 style='color:#15803d;'>Hello, {$finderUser->name}!</h2>
+                            <p><strong>{$ownerUser->name}</strong> has confirmed receipt of <strong>{$item->title}</strong>.</p>
+                            <p>The case is now officially closed. Thank you for your honesty and for making UTM a better place! 🎉</p>
+                            <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                        </div>
+                    ");
+            });
+        } catch (\Exception $e) {
+            \Log::error('confirmItemReceived email failed: ' . $e->getMessage());
+        }
+
+        return back()->with('status', 'Case closed! Thank you for using UTM FoundIt. 🎉');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SCENARIO B — LOST POST (Owner-Finder) — untuk later
+    |--------------------------------------------------------------------------
+    */
+
+    public function showFoundThisForm($id)
+    {
+        $item = Item::findOrFail($id);
+
+        if ($item->type !== 'lost') {
+            return back()->with('error', 'This action is only available on lost item posts.');
+        }
+        if ($item->user_id === auth()->id()) {
+            return back()->with('error', 'You cannot report finding your own item.');
+        }
+        if ($item->status !== 'active') {
+            return back()->with('error', 'This item is no longer available.');
+        }
+
+        return view('auth.found-this', compact('item'));
+    }
+
+    public function submitFoundThis(Request $request, $id)
+    {
+        $request->validate([
+            'message'        => 'required|string|max:500',
+            'contact'        => 'required|string|max:255',
+            'proof_image'    => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'bank_name'      => 'nullable|string|max:100',
+            'account_number' => 'nullable|string|max:50',
+        ]);
+
+        $item = Item::with('user')->findOrFail($id);
+
+        $imagePath = $request->file('proof_image')->store('proofs', 'public');
+
+        $claim = Claim::create([
+            'item_id'        => $item->id,
+            'user_id'        => auth()->id(),
+            'message'        => $request->message,
+            'contact'        => $request->contact,
+            'proof_image'    => $imagePath,
+            'status'         => 'pending',
+            'bank_name'      => $request->bank_name,
+            'account_number' => $request->account_number,
+        ]);
+
+        // Email Owner with proof
+        try {
+            $ownerEmail    = $item->user->email;
+            $ownerName     = $item->user->name;
+            $finderName    = auth()->user()->name;
+            $finderContact = $request->contact;
+            $itemTitle     = $item->title;
+            $finderMsg     = $request->message;
+            $absPath       = storage_path('app/public/' . $imagePath);
+
+            Mail::send([], [], function ($message) use ($ownerEmail, $ownerName, $finderName, $finderContact, $itemTitle, $finderMsg, $absPath) {
+                $message->to($ownerEmail)
+                    ->subject('[UTM FoundIt] Someone Found Your Lost Item: ' . $itemTitle)
+                    ->html("
+                        <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                            <h2 style='color:#800000;'>Hello, {$ownerName}!</h2>
+                            <p><strong>{$finderName}</strong> reported they found your lost item: <strong>{$itemTitle}</strong>.</p>
+                            <blockquote style='background:#fcf6f6;border-left:4px solid #800000;padding:12px;border-radius:8px;font-style:italic;color:#555;'>
+                                \"{$finderMsg}\"
+                            </blockquote>
+                            <p><strong>Finder's Contact:</strong> {$finderContact}</p>
+                            <p>The proof image is attached. Log in to review and approve the claim.</p>
+                            <p>
+                                <a href='" . url('/items') . "' style='background:#800000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;'>
+                                    Review on UTM FoundIt
+                                </a>
+                            </p>
+                            <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                        </div>
+                    ");
+
+                if (file_exists($absPath)) {
+                    $message->attach($absPath, [
+                        'as'   => 'proof.' . pathinfo($absPath, PATHINFO_EXTENSION),
+                        'mime' => mime_content_type($absPath),
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            \Log::error('submitFoundThis email failed: ' . $e->getMessage());
+        }
+
+        return redirect('/items')->with('status', 'Notification sent! The owner has been emailed with your proof.');
+    }
+
+    public function approveClaim(Request $request, $claimId)
+    {
+        $claim = Claim::with(['item.user', 'user'])->findOrFail($claimId);
+        $item  = $claim->item;
+
+        if ($item->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorised action.');
+        }
+
+        $method = $request->input('handover_method');
+
+        if (!in_array($method, ['pickup', 'delivery'])) {
+            return back()->with('error', 'Please select a handover method before approving.');
+        }
+
+        $claim->update(['status' => 'approved']);
+
+        ['finder_user' => $finderUser, 'owner_user' => $ownerUser] = $this->resolveRoles($item, $claim);
+
+        if ($method === 'delivery') {
+            $item->update(['status' => 'awaiting_payment']);
+
+            try {
+                Mail::to($ownerUser->email)->send(new ClaimStatusMail($claim, 'approved'));
+            } catch (\Exception $e) {}
+
+            return back()->with('status', 'Claim approved! Owner notified to complete the RM10 postage payment.');
+        }
+
+        $item->update(['status' => 'awaiting_appointment']);
+
+        try {
+            $finderEmail = $finderUser->email;
+            $finderName  = $finderUser->name;
+            $ownerName   = $ownerUser->name;
+            $itemTitle   = $item->title;
+
+            Mail::send([], [], function ($msg) use ($finderEmail, $finderName, $ownerName, $itemTitle) {
+                $msg->to($finderEmail)
+                    ->subject('[UTM FoundIt] Set Pickup Appointment for: ' . $itemTitle)
+                    ->html("
+                        <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                            <h2 style='color:#800000;'>Hello, {$finderName}!</h2>
+                            <p>The claim for <strong>{$itemTitle}</strong> by <strong>{$ownerName}</strong> has been approved via self-pickup.</p>
+                            <p>Please log in and set the appointment date, time, and location.</p>
+                            <p>
+                                <a href='" . url('/items') . "' style='background:#800000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;'>
+                                    Set Appointment
+                                </a>
+                            </p>
+                            <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                        </div>
+                    ");
+            });
+        } catch (\Exception $e) {
+            \Log::error('approveClaim pickup email failed: ' . $e->getMessage());
+        }
+
+        return back()->with('status', 'Claim approved! Finder notified to set the pickup appointment.');
+    }
+
+    public function rejectClaim($claimId)
+    {
+        $claim = Claim::with(['item', 'user'])->findOrFail($claimId);
+
+        if ($claim->item->user_id !== auth()->id()) {
+            return back()->with('error', 'Unauthorised action.');
+        }
+
+        $claim->update(['status' => 'rejected']);
+        $claim->item->update(['status' => 'active']);
+
+        try {
+            Mail::to($claim->user->email)->send(new ClaimStatusMail($claim, 'rejected'));
+        } catch (\Exception $e) {}
+
+        return back()->with('status', 'Claim rejected. The item is now active again.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARDS
+    |--------------------------------------------------------------------------
+    */
+
+    public function finderClaims()
+    {
+        $items = Item::where('user_id', auth()->id())
+                     ->with(['claims.user'])
+                     ->orderBy('created_at', 'desc')
+                     ->get();
+
+        return view('auth.finder-claims', compact('items'));
+    }
+
     public function myClaims()
     {
         $claims = Claim::with('item')
@@ -142,325 +595,4 @@ class ClaimController extends Controller
 
         return view('auth.my-claims', compact('claims'));
     }
-
-    // Finder's claims inbox
-    public function finderClaims()
-    {
-        $items = Item::with(['claims.user'])
-                     ->where('user_id', auth()->id())
-                     ->where('type', 'found')
-                     ->orderBy('created_at', 'desc')
-                     ->get();
-
-        return view('auth.finder-claims', compact('items'));
-    }
-
-    // Approve claim
-    public function approveClaim($claimId)
-    {
-        $claim = Claim::with(['item', 'user'])->findOrFail($claimId);
-
-        if ($claim->item->user_id !== auth()->id()) {
-            return back()->with('error', 'Unauthorized action.');
-        }
-
-        $claim->update(['status' => 'approved']);
-        
-        // Jika kaedah ialah self-pickup, boleh terus buka butang serah
-        if ($claim->delivery_method === 'self_pickup') {
-            $claim->item->update(['status' => 'claimed']); 
-        } else {
-            $claim->item->update(['status' => 'awaiting_payment']);
-        }
-
-        // Send email to claimant
-        try {
-            Mail::to($claim->user->email)->send(new ClaimStatusMail($claim, 'approved'));
-        } catch (\Exception $e) {}
-
-        return back()->with('status', 'Claim approved successfully! The claimant has been notified.');
-    }
-
-    // Reject claim
-    public function rejectClaim($claimId)
-    {
-        $claim = Claim::with(['item', 'user'])->findOrFail($claimId);
-
-        if ($claim->item->user_id !== auth()->id()) {
-            return back()->with('error', 'Unauthorized action.');
-        }
-
-        $claim->update(['status' => 'rejected']);
-        $claim->item->update(['status' => 'active']);
-
-        // Send email to claimant
-        try {
-            Mail::to($claim->user->email)->send(new ClaimStatusMail($claim, 'rejected'));
-        } catch (\Exception $e) {}
-
-        return back()->with('status', 'Claim rejected. The item is now active again.');
-    }
-
-    // Show payment page (Only for the matching claimant)
-    public function showPayment($claimId)
-    {
-        $claim = Claim::with('item.user')->findOrFail($claimId);
-        
-        if ($claim->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        return view('auth.payment', compact('claim'));
-    }
-
-    // Process payment (Upload Bank Receipt)
-    public function processPayment(Request $request, $id)
-    {
-        $request->validate([
-            'shipping_address' => 'required|string',
-            'receipt_file' => 'required|image|mimes:jpeg,png,jpg,pdf|max:2048',
-        ]);
-
-        // 1. TERUS LOAD skali dengan hubungan Item dan User (Finder) di awal query
-        $claim = Claim::with(['item.user', 'user'])->findOrFail($id);
-
-        if ($request->hasFile('receipt_file')) {
-            $path = $request->file('receipt_file')->store('receipts', 'public');
-            
-            // 2. Kemas kini rekod claim
-            $claim->update([
-                'payment_receipt' => $path,
-                'status' => 'paid'
-            ]);
-
-            // Status item dipaksa menjadi 'claimed' supaya Finder nampak di UI
-            $claim->item->update([
-                'status' => 'claimed' 
-            ]);
-
-            // 3. Ambil emel Finder secara direct daripada object yang dah di-load tadi
-            $finderEmail = $claim->item->user->email ?? null; 
-
-            if ($finderEmail) {
-                try {
-                    // Hantar mailable object. 
-                    // Pastikan dalam __construct() PaymentReceiptMail kau ada terima variable $claim dan $address!
-                    Mail::to($finderEmail)->send(new PaymentReceiptMail($claim, $request->shipping_address));
-                } catch (\Exception $e) {
-                    // Jika sangkut, check log dekat storage/logs/laravel.log untuk tengok ralat SMTP
-                    \Log::error("Gagal hantar email resit ke Finder: " . $e->getMessage());
-                }
-            }
-        }
-
-        return redirect('/dashboard')->with('status', 'Payment submitted and Finder notified!');
-    }
-
-    // Finder save appointment details & send email to claimant
-    public function storeAppointment(Request $request, $itemId)
-    {
-        $request->validate([
-            'appointment_date' => 'required|date|after:now',
-            'appointment_location' => 'required|string|max:255',
-        ]);
-
-        $item = Item::findOrFail($itemId);
-
-        if ($item->user_id !== auth()->id()) {
-            return back()->with('error', 'Unauthorized action.');
-        }
-
-        // Cari claim yang bertaraf pending bagi item ini
-        $claim = Claim::where('item_id', $item->id)->where('status', 'pending')->first();
-
-        if (!$claim) {
-            return back()->with('error', 'No active claim found for this item.');
-        }
-
-        // Simpan data ke dalam table claims dan up status ke approved
-        $claim->update([
-            'appointment_date' => $request->appointment_date,
-            'appointment_location' => $request->appointment_location,
-            'status' => 'approved'
-        ]);
-
-        // Tukar status item kepada 'claimed' supaya Finder boleh tekan 'Mark as Returned' lepas ni
-        $item->update(['status' => 'claimed']);
-
-        // Hantar emel butiran appointment kepada Claimant
-        try {
-            $claimantEmail = $claim->user->email;
-            $claimantName = $claim->user->name;
-            $itemTitle = $item->title;
-            $appDate = \Carbon\Carbon::parse($request->appointment_date)->format('d-m-Y (h:i A)');
-            $appLoc = $request->appointment_location;
-
-            Mail::send([], [], function ($message) use ($claimantEmail, $claimantName, $itemTitle, $appDate, $appLoc) {
-                $message->to($claimantEmail)
-                    ->subject('[UTM FoundIt] 🗓️ Appointment Confirmed for Your Claim!')
-                    ->html("
-                        <div style='font-family: Arial, sans-serif; padding: 25px; color: #333; max-width: 600px; border: 1px solid #e5e7eb; border-radius: 16px;'>
-                            <h2 style='color: #15803d; margin-bottom: 20px;'>Hello, {$claimantName}!</h2>
-                            <p>The finder has set a pickup appointment for your claimed item: <strong>{$itemTitle}</strong>.</p>
-                            
-                            <div style='background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 15px; margin: 20px 0;'>
-                                <p style='margin: 0 0 8px 0; font-weight: bold; color: #166534;'>📍 Appointment Details:</p>
-                                <p style='margin: 4px 0; font-size: 14px;'><strong>Date & Time:</strong> {$appDate}</p>
-                                <p style='margin: 4px 0; font-size: 14px;'><strong>Location:</strong> {$appLoc}</p>
-                            </div>
-
-                            <p>Please meet the finder at the designated time and place. Once you have successfully received your item, remember to log in and confirm receipt!</p>
-                            <hr style='border: 0; border-top: 1px solid #e5e7eb; margin-top: 20px;'>
-                            <p style='color: #666; font-size: 12px; margin-top: 20px;'>*This is an automated system email from UTM FoundIt. Please do not reply directly.</p>
-                        </div>
-                    ");
-            });
-        } catch (\Exception $e) {
-            \Log::error("Gagal hantar email appointment detail ke Claimant: " . $e->getMessage());
-        }
-
-        return back()->with('status', 'Appointment successfully scheduled! Claimant has been notified via email.');
-    }
-
-    public function showFoundThisForm($id)
-    {
-        $item = Item::findOrFail($id);
-
-        // Sekat kalau Owner cuba tekan borang penemuan barang milik sendiri
-        if ($item->user_id === auth()->id()) {
-            return redirect('/items')->with('error', 'You cannot claim or report finding your own item.');
-        }
-
-        return view('auth.found-this', compact('item'));
-    }
-
-    public function submitFoundThis(Request $request, $id)
-    {
-        // 1. Wajibkan proof_image di sini!
-        $request->validate([
-            'message' => 'required|string|max:500',
-            'contact' => 'required|string|max:255',
-            'proof_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Diwajibkan
-        ]);
-
-        $item = Item::findOrFail($id);
-
-        // 2. Simpan gambar bukti ke folder storage/app/public/proofs
-        if ($request->hasFile('proof_image')) {
-            $imagePath = $request->file('proof_image')->store('proofs', 'public');
-        } else {
-            return back()->with('error', 'Proof image is required.');
-        }
-
-        // 3. Create rekod claims
-        $claim = Claim::create([
-            'item_id' => $item->id,
-            'user_id' => auth()->id(), 
-            'message' => $request->message,
-            'contact' => $request->contact,
-            'proof_image' => $imagePath,
-            'status' => 'pending', 
-        ]);
-
-        // 4. Hantar EMEL BESERTA ATTACHMENT GAMBAR kepada Owner
-        try {
-            $ownerEmail = $item->user->email;
-            $ownerName = $item->user->name;
-            $finderName = auth()->user()->name;
-            $itemTitle = $item->title;
-            $finderMessage = $request->message;
-            
-            // Ambil full path gambar dari storage untuk di-attach dalam emel
-            $absoluteImagePath = storage_path('app/public/' . $imagePath);
-
-            Mail::send([], [], function ($message) use ($ownerEmail, $ownerName, $finderName, $itemTitle, $finderMessage, $absoluteImagePath) {
-                $message->to($ownerEmail)
-                    ->subject('[UTM FoundIt] 🔍 Action Required: Someone Found Your Lost Item!')
-                    ->html("
-                        <div style='font-family: Arial, sans-serif; padding: 25px; color: #333; max-width: 600px; border: 1px solid #e5e7eb; border-radius: 16px;'>
-                            <h2 style='color: #800000; margin-bottom: 20px;'>Hello, {$ownerName}!</h2>
-                            <p>Great news! <strong>{$finderName}</strong> reported that they found your lost item: <strong>{$itemTitle}</strong>.</p>
-                            
-                            <div style='background-color: #fcf6f6; border: 1px solid #f5e1e1; border-radius: 12px; padding: 15px; margin: 20px 0;'>
-                                <p style='margin: 0 0 8px 0; font-weight: bold; color: #800000;'>💬 Finder's Message:</p>
-                                <p style='margin: 0; font-style: italic; font-size: 14px; color: #555;'>\"{$finderMessage}\"</p>
-                            </div>
-
-                            <p>📸 <strong>We have attached the proof image provided by the finder to this email.</strong> Please review it carefully.</p>
-                            <p>If this is indeed your item, please click the button below to confirm ownership and choose your return method (Self Pickup or Delivery).</p>
-                            
-                            <div style='margin: 25px 0; text-align: center;'>
-                                <a href='" . url('/dashboard') . "' style='background-color: #800000; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block;'>Yes, Verify & Choose Method</a>
-                            </div>
-                            
-                            <hr style='border: 0; border-top: 1px solid #e5e7eb; margin-top: 20px;'>
-                            <p style='color: #666; font-size: 12px; margin-top: 20px;'>*This is an automated system email from UTM FoundIt. Please do not reply directly.</p>
-                        </div>
-                    ");
-                
-                // LINE MAGIC: Attach gambar bukti terus masuk dalam emel!
-                if (file_exists($absoluteImagePath)) {
-                    $message->attach($absoluteImagePath, [
-                        'as' => 'proof_image.' . pathinfo($absoluteImagePath, PATHINFO_EXTENSION),
-                        'mime' => mime_content_type($absoluteImagePath),
-                    ]);
-                }
-            });
-        } catch (\Exception $e) {
-            \Log::error("Gagal hantar emel beserta attachment ke Owner: " . $e->getMessage());
-        }
-
-        return redirect('/items')->with('status', 'Notification sent successfully! The owner has been notified via email with your proof image.');
-    }
-
-    public function approve(Request $request, $id)
-{
-    $request->validate([
-        'handover_method' => 'required|in:pickup,delivery'
-    ]);
-
-    $claim = Claim::findOrFail($id);
-    $item = $claim->item;
-
-    if (auth()->id() !== $item->user_id) {
-        return back()->with('error', 'Unauthorized action.');
-    }
-
-    // 1. Set status tuntutan finder ini sebagai approved
-    $claim->update(['status' => 'approved']);
-
-    // 2. Reject tuntutan orang lain secara automatik
-    $item->claims()->where('id', '!=', $id)->where('status', 'pending')->update(['status' => 'rejected']);
-
-    // 3. Aliran status ikut acuan asal kau
-    if ($request->handover_method === 'pickup') {
-        $item->update([
-            'status' => 'awaiting_appointment' // Pakai status asal kau untuk Finder set appointment
-        ]);
-        $msg = 'Claim approved! Sila tunggu Finder menetapkan temujanji (Self-Pickup).';
-    } else {
-        // Kalau delivery, kita terus anggap kes diproses/selesai mengantar
-        // Gantikan 'returned' di bawah dengan status akhir/proses pos yang kau dah ada (contoh: 'returned' atau 'returned_by_finder')
-        $item->update([
-            'status' => 'returned' 
-        ]);
-        $msg = 'Claim approved via Delivery! Urusan seterusnya boleh diteruskan di luar platform.';
-    }
-
-    return back()->with('status', $msg);
-}
-
-public function reject($id)
-{
-    $claim = Claim::findOrFail($id);
-    
-    if (auth()->id() !== $claim->item->user_id) {
-        return back()->with('error', 'Unauthorized action.');
-    }
-
-    // Tukar status tuntutan kepada rejected
-    $claim->update(['status' => 'rejected']);
-
-    return back()->with('status', 'Claim rejected successfully.');
-}
 }

@@ -48,11 +48,6 @@
                     <span style="font-weight: 600; color: #333;">RM 9.00</span>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 15px; color: #555; padding-bottom: 15px; border-bottom: 1px dashed #ddd;">
-                    <span>Admin Fee</span>
-                    <span style="font-weight: 600; color: #333;">RM 1.00</span>
-                </div>
-
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 16px; font-weight: bold; color: #1e0101;">Total Amount</span>
                     <span style="font-size: 22px; font-weight: 800; color: #7b1111;">RM 10.00</span>
@@ -91,7 +86,7 @@
                 Delivery Details & Receipt Upload
             </h3>
 
-            <form action="/claims/{{ $claim->id }}/payment" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 20px;">                
+            <form action="{{ route('claims.uploadReceipt', $claim->id) }}" method="POST" enctype="multipart/form-data">                
                 @csrf
 
                 <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -106,10 +101,10 @@
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label for="receipt_file" style="font-size: 14px; font-weight: bold; color: #333;">
+                    <label for="receipt_file" style="font-size: 14px; font-weight:< bold; color: #333;">
                         Select Receipt File (PDF, PNG, JPG)
                     </label>
-                    <input type="file" name="receipt_file" id="receipt_file" required 
+                    <input type="file" name="payment_receipt_image" id="payment_receipt_image" required 
                            style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: #fafafa;">
                     @error('receipt_file')
                         <span style="color: #7b1111; font-size: 13px; margin-top: 4px;">{{ $message }}</span>

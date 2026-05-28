@@ -137,6 +137,42 @@
                         class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm" />
                 </div>
 
+                <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+    <label class="flex items-center gap-2 font-bold text-sm text-gray-700 mb-3 cursor-pointer">
+        <input type="checkbox" name="is_delivery_ready" value="1" id="deliveryCheckbox" onchange="toggleBankInputs()" class="rounded text-red-800 focus:ring-red-800">
+        📦 I am willing to ship/post this item (Flat Rate RM10.00)
+    </label>
+
+    <div id="bankInputs" class="hidden space-y-3 pt-2 border-t border-gray-200">
+        <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Bank Name</label>
+            <select name="bank_name" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-800">
+                <option value="">-- Select Bank --</option>
+                <option value="Maybank">Maybank</option>
+                <option value="CIMB">CIMB Bank</option>
+                <option value="Bank Islam">Bank Islam</option>
+                <option value="RHB">RHB Bank</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Account Number</label>
+            <input type="text" name="account_number" placeholder="e.g. 164012345678" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-800">
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleBankInputs() {
+        const checkbox = document.getElementById('deliveryCheckbox');
+        const bankInputs = document.getElementById('bankInputs');
+        if(checkbox.checked) {
+            bankInputs.classList.remove('hidden');
+        } else {
+            bankInputs.classList.add('hidden');
+        }
+    }
+</script>
+
                 {{-- Buttons --}}
                 <div class="flex gap-3">
                     <button type="submit"
