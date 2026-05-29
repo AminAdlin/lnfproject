@@ -45,7 +45,7 @@
 
                 <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: #555;">
                     <span>Delivery Fee</span>
-                    <span style="font-weight: 600; color: #333;">RM 9.00</span>
+                    <span style="font-weight: 600; color: #333;">RM 10.00</span>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center;">
