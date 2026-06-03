@@ -31,6 +31,7 @@
         .nav-pill:hover { background: white; color: #7f1d1d; transform: scale(1.05); }
     </style>
 </head>
+
 <body class="min-h-screen">
 
     {{-- Navbar --}}
@@ -336,6 +337,19 @@
                                             <p><span class="text-gray-400 text-xs font-sans font-bold">ACCOUNT:</span> <strong>{{ $finderAccNumber ?? 'Not provided' }}</strong></p>
                                             <p><span class="text-gray-400 text-xs font-sans font-bold">AMOUNT:</span> <strong class="text-red-800">RM 10.00</strong></p>
                                         </div>
+                                        @php
+                                            $finderQr = $item->type === 'found' ? $item->bank_qr : $approvedClaim->bank_qr ?? null;
+                                        @endphp
+                                        @if($finderQr)
+                                            <div class="mt-3 pt-3 border-t border-dashed border-gray-200 text-center">
+                                                <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Scan QR to Pay:</p>
+                                                <img src="{{ asset('storage/' . $finderQr) }}"
+                                                     alt="Bank QR"
+                                                     onclick="openQrModal('{{ asset('storage/' . $finderQr) }}')"
+                                                     class="w-24 h-24 object-contain rounded-lg border border-gray-200 p-1 bg-white mx-auto cursor-zoom-in hover:opacity-80 transition">
+                                                <p class="text-[10px] text-gray-400 mt-1">🔍 Tap to enlarge</p>
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <form action="{{ route('claims.uploadReceipt', $approvedClaim->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
@@ -453,7 +467,40 @@
             </div>
         @endif
     </div>
+    {{-- ===== QR MAGNIFIER MODAL — letak sebelum </body> ===== --}}
 
+{{-- Modal overlay --}}
+<div id="qr-modal"
+     onclick="closeQrModal()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out;">
+    <span onclick="closeQrModal()"
+          style="position:absolute;top:20px;right:24px;color:white;font-size:32px;cursor:pointer;font-weight:bold;line-height:1;opacity:0.8;">✕</span>
+    <img id="qr-modal-img" src="" alt="QR Code"
+         style="max-width:85vw;max-height:85vh;border-radius:16px;border:4px solid white;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:qrPopIn 0.2s ease;">
+</div>
+
+<style>
+    @keyframes qrPopIn {
+        from { transform: scale(0.85); opacity: 0; }
+        to   { transform: scale(1);    opacity: 1; }
+    }
+</style>
+
+<script>
+    function openQrModal(src) {
+        var modal = document.getElementById('qr-modal');
+        document.getElementById('qr-modal-img').src = src;
+        modal.style.display = 'flex';
+    }
+    function closeQrModal() {
+        document.getElementById('qr-modal').style.display = 'none';
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeQrModal();
+    });
+</script>
+
+{{-- Letak baris ni SEBELUM closing script tag yang ada confirmLogout() --}}
     <script>
         function confirmLogout() {
             Swal.fire({

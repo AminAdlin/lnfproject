@@ -7,7 +7,6 @@ use App\Models\Item;
 use App\Models\Claim;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\ClaimStatusMail;
 class ClaimController extends Controller
 {
     /*
@@ -427,13 +426,19 @@ class ClaimController extends Controller
             'message'        => 'required|string|max:500',
             'contact'        => 'required|string|max:255',
             'proof_image'    => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'bank_name'      => 'nullable|string|max:100',
-            'account_number' => 'nullable|string|max:50',
+            'bank_name'      => 'required|string|max:100',
+            'account_number' => 'required|string|max:50',
+            'bank_qr'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+
         ]);
 
         $item = Item::with('user')->findOrFail($id);
 
         $imagePath = $request->file('proof_image')->store('proofs', 'public');
+        $qrPath = null;
+            if ($request->hasFile('bank_qr')) {
+            $qrPath = $request->file('bank_qr')->store('bankqrs', 'public');
+        }
 
         $claim = Claim::create([
             'item_id'        => $item->id,
@@ -444,6 +449,7 @@ class ClaimController extends Controller
             'status'         => 'pending',
             'bank_name'      => $request->bank_name,
             'account_number' => $request->account_number,
+            'bank_qr'        => $qrPath,
         ]);
 
         // Email Owner with proof
@@ -511,14 +517,35 @@ class ClaimController extends Controller
         ['finder_user' => $finderUser, 'owner_user' => $ownerUser] = $this->resolveRoles($item, $claim);
 
         if ($method === 'delivery') {
-            $item->update(['status' => 'awaiting_payment']);
+    $item->update(['status' => 'awaiting_payment']);
 
-            try {
-                Mail::to($ownerUser->email)->send(new ClaimStatusMail($claim, 'approved'));
-            } catch (\Exception $e) {}
+    try {
+        $ownerEmail = $ownerUser->email;
+        $ownerName  = $ownerUser->name;
+        $itemTitle  = $item->title;
 
-            return back()->with('status', 'Claim approved! Owner notified to complete the RM10 postage payment.');
-        }
+        Mail::send([], [], function ($msg) use ($ownerEmail, $ownerName, $itemTitle) {
+            $msg->to($ownerEmail)
+                ->subject('[UTM FoundIt] Payment Required for: ' . $itemTitle)
+                ->html("
+                    <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                        <h2 style='color:#800000;'>Hello, {$ownerName}!</h2>
+                        <p>Your claim has been approved via delivery. Please log in and complete the <strong>RM10 postage payment</strong> to proceed.</p>
+                        <p>
+                            <a href='" . url('/items') . "' style='background:#800000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;'>
+                                Make Payment Now
+                            </a>
+                        </p>
+                        <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                    </div>
+                ");
+        });
+    } catch (\Exception $e) {
+        \Log::error('approveClaim delivery email failed: ' . $e->getMessage());
+    }
+
+    return back()->with('status', 'Claim approved! Owner notified to complete the RM10 postage payment.');
+}
 
         $item->update(['status' => 'awaiting_appointment']);
 
@@ -564,8 +591,25 @@ class ClaimController extends Controller
         $claim->item->update(['status' => 'active']);
 
         try {
-            Mail::to($claim->user->email)->send(new ClaimStatusMail($claim, 'rejected'));
-        } catch (\Exception $e) {}
+    $rejectEmail = $claim->user->email;
+    $rejectName  = $claim->user->name;
+    $itemTitle   = $claim->item->title;
+
+    Mail::send([], [], function ($msg) use ($rejectEmail, $rejectName, $itemTitle) {
+        $msg->to($rejectEmail)
+            ->subject('[UTM FoundIt] Claim Rejected: ' . $itemTitle)
+            ->html("
+                <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                    <h2 style='color:#800000;'>Hello, {$rejectName}!</h2>
+                    <p>Unfortunately your claim for <strong>{$itemTitle}</strong> has been rejected.</p>
+                    <p>If you believe this is a mistake, please contact the post owner directly.</p>
+                    <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                </div>
+            ");
+    });
+} catch (\Exception $e) {
+    \Log::error('rejectClaim email failed: ' . $e->getMessage());
+}
 
         return back()->with('status', 'Claim rejected. The item is now active again.');
     }

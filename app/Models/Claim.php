@@ -22,6 +22,8 @@ class Claim extends Model
         'bank_name',
         'account_number',
         'payment_receipt_image',
+        'bank_qr',           
+        'shipping_address',
     ];
 
     public function item()

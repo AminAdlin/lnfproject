@@ -137,41 +137,27 @@
                         class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm" />
                 </div>
 
-                <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-    <label class="flex items-center gap-2 font-bold text-sm text-gray-700 mb-3 cursor-pointer">
-        <input type="checkbox" name="is_delivery_ready" value="1" id="deliveryCheckbox" onchange="toggleBankInputs()" class="rounded text-red-800 focus:ring-red-800">
-        📦 I am willing to ship/post this item (Flat Rate RM10.00)
-    </label>
+                <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+    <p class="font-bold text-sm text-gray-700">📦 Delivery Info (Required)</p>
+    <p class="text-xs text-gray-500">If the owner requests delivery, they will pay a flat rate of RM10.00 to you.</p>
 
-    <div id="bankInputs" class="hidden space-y-3 pt-2 border-t border-gray-200">
-        <div>
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Bank Name</label>
-            <select name="bank_name" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-800">
-                <option value="">-- Select Bank --</option>
-                <option value="Maybank">Maybank</option>
-                <option value="CIMB">CIMB Bank</option>
-                <option value="Bank Islam">Bank Islam</option>
-                <option value="RHB">RHB Bank</option>
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Account Number</label>
-            <input type="text" name="account_number" placeholder="e.g. 164012345678" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-800">
-        </div>
+    <div>
+    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Bank Name</label>
+    <input type="text" name="bank_name" required placeholder="e.g. Maybank, CIMB, Wise, GXBank..."
+        class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-800">
     </div>
+    <div>
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Account Number</label>
+        <input type="text" name="account_number" required placeholder="e.g. 164012345678" class="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-800">
+    </div>
+    <div>
+    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">QR Code Image <span class="text-gray-400 font-normal">(Optional)</span></label>
+    <input type="file" name="bank_qr" accept="image/*"
+        class="w-full text-xs text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-800 hover:file:bg-red-100 border border-gray-200 rounded-xl p-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-800">
+    <p class="text-xs text-gray-400 mt-1">Upload your bank QR code so the owner can scan to pay easily.</p>
 </div>
-
-<script>
-    function toggleBankInputs() {
-        const checkbox = document.getElementById('deliveryCheckbox');
-        const bankInputs = document.getElementById('bankInputs');
-        if(checkbox.checked) {
-            bankInputs.classList.remove('hidden');
-        } else {
-            bankInputs.classList.add('hidden');
-        }
-    }
-</script>
+</div>
+</div>
 
                 {{-- Buttons --}}
                 <div class="flex gap-3">

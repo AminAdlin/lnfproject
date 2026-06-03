@@ -10,7 +10,6 @@
             margin: 0;
             padding: 40px 20px;
             background-color: #f5f5f5;
-            /* Corak polkadot grey halus sebiji macam dashboard */
             background-image: 
                 radial-gradient(circle at 20% 50%, rgba(127,29,29,0.01) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(153,27,27,0.01) 0%, transparent 50%),
@@ -22,9 +21,80 @@
             justify-content: center;
             min-height: 80vh;
         }
+
+        /* QR Magnifier */
+        .qr-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: zoom-in;
+        }
+        .qr-wrapper img {
+            max-width: 150px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            padding: 5px;
+            background: white;
+            transition: opacity 0.2s;
+        }
+        .qr-wrapper:hover img {
+            opacity: 0.85;
+        }
+        .qr-hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 6px;
+            display: block;
+        }
+
+        /* Modal overlay */
+        #qr-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+        #qr-modal.active {
+            display: flex;
+        }
+        #qr-modal img {
+            max-width: 85vw;
+            max-height: 85vh;
+            border-radius: 16px;
+            border: 4px solid white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: popIn 0.2s ease;
+        }
+        #qr-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+            font-weight: bold;
+            line-height: 1;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        #qr-modal-close:hover { opacity: 1; }
+
+        @keyframes popIn {
+            from { transform: scale(0.85); opacity: 0; }
+            to   { transform: scale(1);    opacity: 1; }
+        }
     </style>
 </head>
 <body>
+
+    {{-- QR Modal --}}
+    <div id="qr-modal" onclick="closeQrModal()">
+        <span id="qr-modal-close" onclick="closeQrModal()">✕</span>
+        <img id="qr-modal-img" src="" alt="QR Code">
+    </div>
 
     <div style="width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px;">
         
@@ -43,8 +113,8 @@
                     <strong>Item to Claim:</strong> <span style="color: #333;">{{ $claim->item->title }}</span>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; color: #555;">
-                    <span>Delivery Fee</span>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 15px; color: #555; padding-bottom: 15px; border-bottom: 1px dashed #ddd;">
+                    <span>Delivery Rate</span>
                     <span style="font-weight: 600; color: #333;">RM 10.00</span>
                 </div>
 
@@ -74,8 +144,10 @@
             @if($claim->item->bank_qr)
                 <div style="text-align: center; margin-top: 10px; padding-top: 15px; border-top: 1px dashed #ddd;">
                     <p style="font-size: 12px; color: #666; font-weight: bold; margin-bottom: 8px;">Scan QR to Pay:</p>
-                    <img src="{{ asset('storage/' . $claim->item->bank_qr) }}" alt="Bank QR" 
-                         style="max-width: 150px; border-radius: 10px; border: 1px solid #ddd; padding: 5px; background: white;">
+                    <div class="qr-wrapper" onclick="openQrModal('{{ asset('storage/' . $claim->item->bank_qr) }}')">
+                        <img src="{{ asset('storage/' . $claim->item->bank_qr) }}" alt="Bank QR">
+                        <span class="qr-hint">🔍 Tap to enlarge</span>
+                    </div>
                 </div>
             @endif
         </div>
@@ -100,19 +172,18 @@
                     @enderror
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label for="receipt_file" style="font-size: 14px; font-weight:< bold; color: #333;">
-                        Select Receipt File (PDF, PNG, JPG)
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+                    <label for="payment_receipt_image" style="font-size: 14px; font-weight: bold; color: #333;">
+                        Select Receipt File (PNG, JPG)
                     </label>
                     <input type="file" name="payment_receipt_image" id="payment_receipt_image" required 
                            style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: #fafafa;">
-                    @error('receipt_file')
+                    @error('payment_receipt_image')
                         <span style="color: #7b1111; font-size: 13px; margin-top: 4px;">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <button type="submit" 
-                        style="background: #7b1111; color: white; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; text-align: center; width: 100%;">
+                <button type="submit" style="margin-top: 20px; background: #7b1111; color: white; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; text-align: center; width: 100%;">
                     Submit Payment & Notify Finder
                 </button>
             </form>
@@ -123,6 +194,19 @@
         </div>
 
     </div>
+
+    <script>
+        function openQrModal(src) {
+            document.getElementById('qr-modal-img').src = src;
+            document.getElementById('qr-modal').classList.add('active');
+        }
+        function closeQrModal() {
+            document.getElementById('qr-modal').classList.remove('active');
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeQrModal();
+        });
+    </script>
 
 </body>
 </html>
