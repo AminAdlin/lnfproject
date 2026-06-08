@@ -129,7 +129,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="/items/{{ $item->id }}/claim">
+            <form method="POST" action="/items/{{ $item->id }}/claim" id="claim-form">
                 @csrf
 
                 {{-- Security Question --}}
@@ -171,17 +171,17 @@
                 </div>
 
                 {{-- Buttons --}}
-                <div class="flex gap-3">
-                    <button type="button" onclick="checkAndSubmit()"
- class="flex-1 bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-md">
-Submit Claim
-</button>
-                    <a href="/items"
-    class="flex-1 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition border border-gray-200">
-    Cancel
-</a>
-
-                    <div id="report-wrong-answer" class="hidden mt-4">
+<div class="flex gap-3">
+    <button type="button" onclick="checkAndSubmit()"
+        class="flex-1 bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-md">
+        Submit Claim
+    </button>
+    <a href="/items"
+        class="flex-1 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition border border-gray-200">
+        Cancel
+    </a>
+</div>
+<div id="report-wrong-answer" class="hidden mt-4">
     <div class="bg-red-50 border border-red-200 rounded-xl p-4">
         <p class="text-xs font-bold text-red-800 mb-1">⚠️ Think your answer is correct?</p>
         <p class="text-xs text-gray-500 mb-3">If you believe the security answer is wrong, you can report this to admin.</p>
@@ -255,7 +255,7 @@ Submit Claim
         .then(data => {
             if (data.success) {
                 // Correct — submit form
-                document.querySelector('form').submit();
+                document.getElementById('claim-form').submit();
             } else {
                 wrongAttempts++;
                 
