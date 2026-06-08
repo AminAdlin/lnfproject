@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Claim Item - UTM FoundIt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
@@ -171,40 +172,136 @@
 
                 {{-- Buttons --}}
                 <div class="flex gap-3">
-                    <button type="submit"
-                        class="flex-1 bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-md">
-                        Submit Claim
-                    </button>
+                    <button type="button" onclick="checkAndSubmit()"
+ class="flex-1 bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-md">
+Submit Claim
+</button>
                     <a href="/items"
-                        class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition border border-gray-200">
-                        Cancel
-                    </a>
+    class="flex-1 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition border border-gray-200">
+    Cancel
+</a>
+
+                    <div id="report-wrong-answer" class="hidden mt-4">
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+        <p class="text-xs font-bold text-red-800 mb-1">⚠️ Think your answer is correct?</p>
+        <p class="text-xs text-gray-500 mb-3">If you believe the security answer is wrong, you can report this to admin.</p>
+        <button type="button" onclick="openWrongAnswerReport()"
+            class="w-full text-xs font-bold text-red-600 bg-red-100 hover:bg-red-200 py-2 px-4 rounded-xl transition border border-red-200">
+            🚩 Report Wrong Security Answer
+        </button>
+    </div>
+</div>
                 </div>
 
             </form>
         </div>
 
     </div>
-
+{{-- SECURITY QUESTION REPORT MODAL --}}
+<div id="wrong-answer-modal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:20px;padding:28px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 6px;color:#800000;font-size:16px;font-weight:800;">🚩 Report Wrong Security Answer</h3>
+        <p style="margin:0 0 18px;color:#666;font-size:13px;">Admin will review and contact the post owner to verify.</p>
+        <form method="POST" action="/items/{{ $item->id }}/report">
+            @csrf
+            <input type="hidden" name="reason" value="wrong_security_answer">
+            <div style="margin-bottom:18px;">
+                <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">
+                    Explain why you think your answer is correct
+                </label>
+                <textarea name="message" rows="4" required placeholder="e.g. I am the owner because..."
+                    style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:13px;resize:none;font-family:Arial,sans-serif;box-sizing:border-box;outline:none;"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button type="submit"
+                    style="flex:1;background:#800000;color:white;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                    Submit Report
+                </button>
+                <button type="button" onclick="document.getElementById('wrong-answer-modal').style.display='none'"
+                    style="flex:1;background:#f3f4f6;color:#555;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
     <script>
-        function confirmLogout() {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You will need to login again to access your dashboard.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#800000',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, logout!',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('logout-form').submit();
-                }
-            })
+    let wrongAttempts = 0;
+
+    function checkAndSubmit() {
+        const answer = document.querySelector('input[name="answer"]').value.trim();
+        const method = document.querySelector('input[name="delivery_method"]:checked');
+
+        if (!answer) {
+            Swal.fire({ icon: 'warning', title: 'Please enter your answer', confirmButtonColor: '#800000' });
+            return;
         }
-    </script>
+        if (!method) {
+            Swal.fire({ icon: 'warning', title: 'Please select a recovery method', confirmButtonColor: '#800000' });
+            return;
+        }
+
+        // AJAX check answer first
+        fetch('/items/{{ $item->id }}/check-answer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ answer: answer })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Correct — submit form
+                document.querySelector('form').submit();
+            } else {
+                wrongAttempts++;
+                
+                if (wrongAttempts >= 3) {
+                    // Show report button after 3 wrong attempts
+                    document.getElementById('report-wrong-answer').classList.remove('hidden');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Incorrect Answer',
+                        text: 'You have entered the wrong answer 3 times. If you believe your answer is correct, you may report this issue.',
+                        confirmButtonColor: '#800000'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Incorrect Answer',
+                        text: 'Wrong answer. Attempts: ' + wrongAttempts + '/3',
+                        confirmButtonColor: '#800000'
+                    });
+                }
+            }
+        });
+    }
+
+    function openWrongAnswerReport() {
+        document.getElementById('wrong-answer-modal').style.display = 'flex';
+    }
+
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will need to login again to access your dashboard.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#800000',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('logout-form').submit();
+            }
+        });
+    }
+</script>
 
 </body>
 </html>

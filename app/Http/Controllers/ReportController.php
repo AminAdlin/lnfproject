@@ -12,7 +12,7 @@ class ReportController extends Controller
     public function store(Request $request, $itemId)
     {
         $request->validate([
-            'reason'  => 'required|in:fake_suspicious,already_resolved,spam_duplicate,inappropriate,other',
+            'reason'  => 'required|in:fake_suspicious,already_resolved,spam_duplicate,inappropriate,wrong_security_answer,other',
             'message' => 'nullable|string|max:500',
         ]);
 
@@ -46,6 +46,7 @@ class ReportController extends Controller
                 'already_resolved' => 'Already Resolved',
                 'spam_duplicate'   => 'Spam / Duplicate',
                 'inappropriate'    => 'Inappropriate Content',
+                'wrong_security_answer' => 'Wrong Security Answer',
                 'other'            => 'Other',
             };
             $message = $request->message ?? 'No additional details provided.';
@@ -79,6 +80,6 @@ class ReportController extends Controller
             \Log::error('Report email to admin failed: ' . $e->getMessage());
         }
 
-        return back()->with('status', 'Report submitted. Our team will review it shortly.');
+        return redirect('/items')->with('status', 'Report submitted. Our team will review it shortly.');
     }
 }
