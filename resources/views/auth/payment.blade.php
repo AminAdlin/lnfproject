@@ -152,42 +152,63 @@
             @endif
         </div>
 
-        <div style="background: white; border-radius: 18px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border: 1px solid #eef0f2;">
-            
-            <h3 style="color: #800000; margin-top: 0; margin-bottom: 15px; font-size: 18px; font-weight: bold;">
-                Delivery Details & Receipt Upload
-            </h3>
+        {{-- Shipping Address (shared for both methods) --}}
+    <div style="background: white; border-radius: 18px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border: 1px solid #eef0f2;">
+        <h3 style="color: #800000; margin-top: 0; margin-bottom: 15px; font-size: 18px; font-weight: bold;">
+            📍 Shipping Address
+        </h3>
+        <textarea id="shipping_address_input" rows="3" required
+            placeholder="Receiver name, phone number, full address..."
+            style="width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;font-size:14px;background:#fafafa;font-family:Arial,sans-serif;resize:vertical;box-sizing:border-box;"></textarea>
+    </div>
 
-            <form action="{{ route('claims.uploadReceipt', $claim->id) }}" method="POST" enctype="multipart/form-data">                
-                @csrf
+    {{-- Payment Method --}}
+    <div style="background: white; border-radius: 18px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border: 1px solid #eef0f2;">
+        <h3 style="color: #800000; margin-top: 0; margin-bottom: 6px; font-size: 18px; font-weight: bold;">
+            💳 Choose Payment Method
+        </h3>
+        <p style="color:#888;font-size:13px;margin:0 0 18px;">Select how you'd like to pay the RM10 delivery fee.</p>
 
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <label for="shipping_address" style="font-size: 14px; font-weight: bold; color: #333;">
-                        Shipping Address (For Finder to post your item)
-                    </label>
-                    <textarea name="shipping_address" id="shipping_address" rows="3" required placeholder="Enter your full home address or hostel room details here..."
-                              style="padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: #fafafa; font-family: Arial, sans-serif; resize: vertical;"></textarea>
-                    @error('shipping_address')
-                        <span style="color: #7b1111; font-size: 13px; margin-top: 4px;">{{ $message }}</span>
-                    @enderror
-                </div>
+        {{-- Option 1: Pay Online --}}
+        <form action="{{ route('payment.create', $claim->id) }}" method="POST" id="online-form">
+            @csrf
+            <input type="hidden" name="shipping_address" id="online_address">
+            <button type="submit" onclick="return passAddress('online_address')"
+                style="width:100%;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:white;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;">
+                ⚡ Pay Online via FPX — RM10.00
+                <span style="font-size:11px;background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:20px;font-weight:600;">Recommended</span>
+            </button>
+        </form>
 
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
-                    <label for="payment_receipt_image" style="font-size: 14px; font-weight: bold; color: #333;">
-                        Select Receipt File (PNG, JPG)
-                    </label>
-                    <input type="file" name="payment_receipt_image" id="payment_receipt_image" required 
-                           style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; background: #fafafa;">
-                    @error('payment_receipt_image')
-                        <span style="color: #7b1111; font-size: 13px; margin-top: 4px;">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                <button type="submit" style="margin-top: 20px; background: #7b1111; color: white; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s; text-align: center; width: 100%;">
-                    Submit Payment & Notify Finder
-                </button>
-            </form>
+        <div style="display:flex;align-items:center;gap:10px;margin:16px 0;">
+            <div style="flex:1;height:1px;background:#eee;"></div>
+            <span style="color:#aaa;font-size:12px;font-weight:600;">OR</span>
+            <div style="flex:1;height:1px;background:#eee;"></div>
         </div>
+
+        {{-- Option 2: Manual Transfer --}}
+        <form action="{{ route('claims.uploadReceipt', $claim->id) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <input type="hidden" name="shipping_address" id="manual_address">
+
+            <p style="font-size:13px;font-weight:bold;color:#555;margin:0 0 10px;">📤 Manual Bank Transfer</p>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <div>
+                    <label style="font-size:12px;font-weight:bold;color:#888;text-transform:uppercase;display:block;margin-bottom:4px;">Payment Receipt (image)</label>
+                    <input type="file" name="payment_receipt_image" required
+                           style="padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;background:#fafafa;width:100%;box-sizing:border-box;">
+                    @error('payment_receipt_image')
+                        <span style="color:#7b1111;font-size:13px;">{{ $message }}</span>
+                    @enderror
+                </div>
+                <button type="submit" onclick="return passAddress('manual_address')"
+                    style="background:#7b1111;color:white;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;">
+                    Submit Receipt & Notify Finder
+                </button>
+            </div>
+        </form>
+    </div>
 
         <div style="text-align: center;">
             <a href="/items" style="color: #666; font-size: 14px; text-decoration: none;">← Cancel and return to items</a>
@@ -206,6 +227,16 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeQrModal();
         });
+
+        function passAddress(targetId) {
+        const addr = document.getElementById('shipping_address_input').value.trim();
+        if (!addr) {
+            alert('Please fill in your shipping address first.');
+            return false;
+        }
+        document.getElementById(targetId).value = addr;
+        return true;
+    }
     </script>
 
 </body>

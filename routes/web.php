@@ -10,6 +10,10 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\DisputeController;
+
 
 // ── Landing ───────────────────────────────────────────────────────────────────
 Route::get('/', fn() => view('welcome'));
@@ -30,6 +34,9 @@ Route::post('/reset-password',        [ResetController::class, 'resetPassword'])
 
 // Email verification
 Route::get('/email/verify', fn() => view('auth.verify-email'))->middleware('auth')->name('verification.notice');
+
+// TOYYIB
+Route::post('/claims/{id}/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
 
 Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
     $user = \App\Models\User::findOrFail($id);
@@ -109,4 +116,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile',          [ProfileController::class, 'showProfile']);
     Route::post('/profile/update',  [ProfileController::class, 'updateProfile']);
     Route::post('/profile/password',[ProfileController::class, 'updatePassword']);
+
+    // REPORT
+    Route::post('/items/{id}/report', [ReportController::class, 'store'])->name('items.report');
+
+    // TOYYIB 
+    Route::post('/claims/{id}/pay-online', [PaymentController::class, 'createBill'])->name('payment.create');
+    Route::get('/claims/{id}/payment/return', [PaymentController::class, 'returnUrl'])->name('payment.return');
+
+    // REPORT DISPUTE
+    Route::post('/items/{id}/dispute', [DisputeController::class, 'store'])->name('items.dispute');
 });

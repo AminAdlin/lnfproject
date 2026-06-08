@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Items - UTM FoundIt</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -155,13 +156,30 @@
 
                         {{-- Title + type badge --}}
                         <div class="flex justify-between items-start mb-3">
-                            <h3 class="font-extrabold text-gray-800 text-base sm:text-lg leading-tight truncate mr-2">{{ $item->title }}</h3>
-                            @if($item->type === 'lost')
-                                <span class="text-xs bg-red-100 text-red-700 px-2 sm:px-3 py-1 rounded-full font-bold border border-red-200 flex-shrink-0 uppercase tracking-wider">Lost</span>
-                            @else
-                                <span class="text-xs bg-green-100 text-green-700 px-2 sm:px-3 py-1 rounded-full font-bold border border-green-200 flex-shrink-0 uppercase tracking-wider">Found</span>
-                            @endif
-                        </div>
+        <h3 class="font-extrabold text-gray-800 text-base sm:text-lg leading-tight truncate mr-2">{{ $item->title }}</h3>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+            @if($item->type === 'lost')
+                <span class="text-xs bg-red-100 text-red-700 px-2 sm:px-3 py-1 rounded-full font-bold border border-red-200 uppercase tracking-wider">Lost</span>
+            @else
+                <span class="text-xs bg-green-100 text-green-700 px-2 sm:px-3 py-1 rounded-full font-bold border border-green-200 uppercase tracking-wider">Found</span>
+            @endif
+            @if(!$isPostOwner)
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" @click.outside="open = false"
+                        class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition font-bold text-lg leading-none">
+                        ⋮
+                    </button>
+                    <div x-show="open" x-transition
+                        class="absolute right-0 top-8 bg-white border border-gray-200 rounded-xl shadow-lg z-20 w-40 py-1">
+                        <button onclick="openReportModal({{ $item->id }})"
+                            class="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition flex items-center gap-2">
+                            🚩 Report Post
+                        </button>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
 
                         {{-- Meta --}}
                         <div class="space-y-1 mb-3">
@@ -205,14 +223,23 @@
 
                         @elseif($item->status === 'awaiting_payment')
                             <div class="w-full text-center text-xs sm:text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">💳 Awaiting Postage Payment (RM10)</div>
-
+                        
                         @elseif($item->status === 'claimed')
-                            <div class="w-full text-center text-xs sm:text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">⏳ In Progress — Appointment / Shipment Set</div>
+
+                            @if($isOwner && $approvedClaim && $approvedClaim->delivery_method === 'delivery')
+                                <div class="w-full text-center text-xs sm:text-sm text-blue-600 py-2.5 bg-blue-50 rounded-xl border border-blue-100 mb-2 font-semibold">📦 Payment Done — Waiting for Finder to Ship</div>
+                            @elseif($isOwner && $approvedClaim && $approvedClaim->delivery_method === 'self_pickup')
+                                <div class="w-full text-center text-xs sm:text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">📅 Appointment Set — Please Show Up</div>
+                            @else
+                                <div class="w-full text-center text-xs sm:text-sm text-yellow-600 py-2.5 bg-yellow-50 rounded-xl border border-yellow-100 mb-2 font-semibold">⏳ In Progress — Appointment / Shipment Set</div>
+                            @endif
 
                         @elseif($item->status === 'returned_by_finder')
                             <div class="w-full text-center text-xs sm:text-sm text-blue-600 py-2.5 bg-blue-50 rounded-xl border border-blue-100 mb-2 font-semibold">📦 Handed Over — Awaiting Owner Confirmation</div>
-                        @endif
 
+                        @elseif($item->status === 'disputed')
+                            <div class="w-full text-center text-xs sm:text-sm text-red-600 py-2.5 bg-red-50 rounded-xl border border-red-200 mb-2 font-semibold">⚠️ Disputed — Under Investigation</div>
+                        @endif
                         {{-- SECTION 3 — DELETE (post owner, active only) --}}
                         @if($isPostOwner && $item->status === 'active')
                             <div class="mt-2 pt-2 border-t border-gray-100">
@@ -318,7 +345,7 @@
                         {{-- Owner sees bank details + upload form | Finder sees waiting message --}}
                         @if($item->status === 'awaiting_payment')
 
-                            @if($isOwner && $approvedClaim)
+                            @if($isOwner && $approvedClaim && $item->type === 'lost')
                                 <div class="mt-4 bg-red-50 border-2 border-red-200 rounded-xl p-4 shadow-inner">
                                     <p class="text-xs font-bold text-red-900 mb-2">📦 Postage Payment Required — RM10.00</p>
 
@@ -338,7 +365,9 @@
                                             <p><span class="text-gray-400 text-xs font-sans font-bold">AMOUNT:</span> <strong class="text-red-800">RM 10.00</strong></p>
                                         </div>
                                         @php
-                                            $finderQr = $item->type === 'found' ? $item->bank_qr : $approvedClaim->bank_qr ?? null;
+                                            $finderQr = $item->type === 'found' 
+                                            ? $item->bank_qr 
+                                            : ($approvedClaim ? $approvedClaim->bank_qr : null);
                                         @endphp
                                         @if($finderQr)
                                             <div class="mt-3 pt-3 border-t border-dashed border-gray-200 text-center">
@@ -351,6 +380,21 @@
                                             </div>
                                         @endif
                                     </div>
+
+                                    {{-- Pay Online --}}
+<form method="POST" action="{{ route('payment.create', $approvedClaim->id) }}" class="mb-2">
+    @csrf
+    <button type="submit"
+        class="w-full py-2 px-4 text-xs font-bold text-white rounded-lg bg-blue-600 hover:bg-blue-700 transition flex items-center justify-center gap-2">
+        ⚡ Pay Online via FPX — RM10.00
+    </button>
+</form>
+
+<div class="flex items-center gap-2 my-2">
+    <div class="flex-1 h-px bg-gray-200"></div>
+    <span class="text-[10px] text-gray-400 font-bold uppercase">or manual transfer</span>
+    <div class="flex-1 h-px bg-gray-200"></div>
+</div>
 
                                     <form action="{{ route('claims.uploadReceipt', $approvedClaim->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
                                         @csrf
@@ -433,6 +477,14 @@
                                             📦 Mark as Returned / Shipped
                                         </button>
                                     </form>
+                                    @if($approvedClaim && $approvedClaim->payment_method === 'manual' || $approvedClaim && $approvedClaim->payment_status === 'paid')
+<div class="mt-2 pt-2 border-t border-gray-100">
+<button onclick="openDisputeModal({{ $item->id }}, 'fake_receipt')"
+         class="w-full text-center text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 py-2 px-4 rounded-xl transition border border-red-100">
+⚠️ Dispute — Fake Receipt
+</button>
+</div>
+@endif
                                 </div>
                             @endif
                         @endif
@@ -452,6 +504,12 @@
                                             ✅ Item Received — Close Case
                                         </button>
                                     </form>
+                                    <div class="mt-2">
+    <button onclick="openDisputeModal({{ $item->id }}, 'item_not_received')"
+        class="w-full text-center text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 py-2 px-4 rounded-xl transition border border-red-100">
+        ⚠️ Dispute — Item Not Received
+    </button>
+</div>
                                 </div>
                             @endif
                         @endif
@@ -467,7 +525,87 @@
             </div>
         @endif
     </div>
-    {{-- ===== QR MAGNIFIER MODAL — letak sebelum </body> ===== --}}
+
+    <div id="report-modal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:20px;padding:28px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 6px;color:#800000;font-size:16px;font-weight:800;">🚩 Report Post</h3>
+        <p style="margin:0 0 18px;color:#666;font-size:13px;">Help us keep UTM FoundIt safe and trustworthy.</p>
+        <form id="report-form" method="POST" action="">
+        @csrf
+        <div style="margin-bottom:14px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Reason</label>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:#444;">
+                    <input type="radio" name="reason" value="fake_suspicious" required style="accent-color:#800000;">
+                    🕵️ Fake / Suspicious Post
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:#444;">
+                    <input type="radio" name="reason" value="already_resolved" style="accent-color:#800000;">
+                    ✅ Already Resolved
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:#444;">
+                    <input type="radio" name="reason" value="spam_duplicate" style="accent-color:#800000;">
+                    🔁 Spam / Duplicate
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:#444;">
+                    <input type="radio" name="reason" value="inappropriate" style="accent-color:#800000;">
+                    ⚠️ Inappropriate Content
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:#444;">
+                    <input type="radio" name="reason" value="other" style="accent-color:#800000;">
+                    💬 Other
+                </label>
+            </div>
+        </div>
+        <div style="margin-bottom:18px;">
+            <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Additional Details <span style="font-weight:400;color:#999;">(Optional)</span></label>
+            <textarea name="message" rows="3" placeholder="Describe the issue..."
+                style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:13px;resize:none;font-family:Arial,sans-serif;box-sizing:border-box;outline:none;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;">
+            <button type="submit"
+                style="flex:1;background:#800000;color:white;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                Submit Report
+            </button>
+            <button type="button" onclick="closeReportModal()"
+                style="flex:1;background:#f3f4f6;color:#555;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                Cancel
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+
+{{-- REPORT MODAL --}}
+<div id="dispute-modal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:20px;padding:28px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 6px;color:#800000;font-size:16px;font-weight:800;">⚠️ Raise a Dispute</h3>
+        <p style="margin:0 0 6px;color:#666;font-size:13px;">This will freeze the item and notify our admin team.</p>
+        <p id="dispute-reason-label" style="margin:0 0 18px;color:#dc2626;font-size:12px;font-weight:700;"></p>
+        <form id="dispute-form" method="POST" action="">
+            @csrf
+            <input type="hidden" name="reason" id="dispute-reason-input">
+            <div style="margin-bottom:18px;">
+                <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Additional Details <span style="font-weight:400;color:#999;">(Optional)</span></label>
+                <textarea name="message" rows="4" placeholder="Describe what happened..."
+                    style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:13px;resize:none;font-family:Arial,sans-serif;box-sizing:border-box;outline:none;"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button type="submit"
+                    onclick="return confirm('Are you sure? This will freeze the item and notify admin.')"
+                    style="flex:1;background:#800000;color:white;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                    Submit Dispute
+                </button>
+                <button type="button" onclick="closeDisputeModal()"
+                    style="flex:1;background:#f3f4f6;color:#555;border:none;padding:12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 {{-- Modal overlay --}}
 <div id="qr-modal"
@@ -499,8 +637,29 @@
         if (e.key === 'Escape') closeQrModal();
     });
 </script>
+<script>
+function openReportModal(itemId) {
+document.getElementById('report-form').action = '/items/' + itemId + '/report';
+document.getElementById('report-modal').style.display = 'flex';
+}
+function closeReportModal() {
+document.getElementById('report-modal').style.display = 'none';
+}
 
-{{-- Letak baris ni SEBELUM closing script tag yang ada confirmLogout() --}}
+function openDisputeModal(itemId, reason) {
+document.getElementById('dispute-form').action = '/items/' + itemId + '/dispute';
+document.getElementById('dispute-reason-input').value = reason;
+document.getElementById('dispute-reason-label').textContent =
+reason === 'item_not_received'
+? '📦 Reason: Item Not Received'
+: '💳 Reason: Fake Receipt';
+document.getElementById('dispute-modal').style.display = 'flex';
+}
+function closeDisputeModal() {
+document.getElementById('dispute-modal').style.display = 'none';
+}
+</script>
+
     <script>
         function confirmLogout() {
             Swal.fire({
