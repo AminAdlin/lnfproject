@@ -153,6 +153,9 @@
 {{-- Nav Actions --}}
             <div class="flex items-center gap-1.5 sm:gap-3">
                 <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm">🔔</a>
+                <a href="/profile" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                👤 <span class="hidden sm:inline text-xs sm:text-sm">Profile</span>
+                </a>
                 <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
                 </a>
