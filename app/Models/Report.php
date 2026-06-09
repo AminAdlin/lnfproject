@@ -11,6 +11,9 @@ class Report extends Model
         'user_id',
         'reason',
         'message',
+        'status',
+        'reviewed_by',
+        'reviewed_at'
     ];
 
     public function item()

@@ -20,11 +20,21 @@ class LoginController extends Controller
             'email' => [
                 'required',
                 'email',
-                'regex:/^[a-zA-Z0-9._%+-]+@(utm\.my|graduate\.utm\.my|utmspace\.edu\.my)$/'
-            ],
+                function ($attribute, $value, $fail) {
+                    if ($value === 'adminfoundit3@gmail.com') {
+                        return;
+                    }
+
+        if (
+            !str_ends_with($value, '@utm.my') &&
+            !str_ends_with($value, '@graduate.utm.my') &&
+            !str_ends_with($value, '@utmspace.edu.my')
+        ) {
+            $fail('Email must be @utm.my, @graduate.utm.my or @utmspace.edu.my');
+        }
+    }
+],
             'password' => 'required|string',
-        ], [
-            'email.regex' => 'Email must be @utm.my, @graduate.utm.my or @utmspace.edu.my',
         ]);
 
         $credentials = $request->only('email', 'password');
@@ -44,6 +54,10 @@ class LoginController extends Controller
     }
     
         $request->session()->regenerate();
+
+        if (Auth::user()->role === 'admin') {
+            return redirect('/admin/dashboard');
+        }
 
         return redirect()->intended('/dashboard');
     }
