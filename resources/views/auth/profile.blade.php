@@ -86,7 +86,9 @@
     </nav>
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
-
+    <a href="/dashboard" class="inline-flex items-center gap-2 text-sm text-red-800 font-semibold mb-4 hover:gap-3 transition-all">
+    ← Back to Dashboard
+    </a>
         {{-- Banner --}}
         <div class="banner-texture text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-y-40 translate-x-40"></div>
