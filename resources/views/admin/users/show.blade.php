@@ -147,21 +147,22 @@
             @endif
 
             {{-- DELETE --}}
-            <form action="{{ route('admin.users.delete', $user->id) }}" method="POST"
-                onsubmit="return confirm('Are you sure?')">
+            <form action="{{ route('admin.users.destroy', $user->id) }}"
+                method="POST"
+                onsubmit="return confirm('Are you sure you want to delete this user?');">
 
             @csrf
             @method('DELETE')
 
-            <button type="submit"
-                class="bg-gray-800 text-white px-5 py-2 rounded-xl hover:bg-black transition">
-            Delete User
-        </button>
-    </form>
+            <button
+                class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                Delete User
+            </button>
+            </form>
 
-</div>
+        </div>
 
-</div>
+    </div>
 </div>
 
 </body>

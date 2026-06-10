@@ -16,7 +16,7 @@ class AdminUserController extends Controller
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'LIKE', "%{$search}%")
-                      ->orWhere('email', 'LIKE', "%{$search}%");
+                      ->orWhere('student_id', 'LIKE', "%{$search}%");
                 });
             })
             ->paginate(10);

@@ -16,6 +16,8 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, Notifiable;
     use SoftDeletes;
 
+    protected $dates = ['deleted_at'];
+
     protected $fillable = [
         'name',
         'email',

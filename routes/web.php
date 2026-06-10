@@ -134,17 +134,28 @@ Route::middleware('auth')->group(function () {
     Route::post('/items/{id}/dispute', [DisputeController::class, 'store'])->name('items.dispute');
 
     // ── Admin Routes ──────────────────────────────────────────────
-Route::middleware(['auth', 'admin'])
-    ->prefix('admin')
-    ->group(function () {
+    Route::middleware(['auth', 'admin'])
+        ->prefix('admin')
+        ->group(function () {
 
-        Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('admin.dashboard');
 
-        Route::get('/posts', [AdminPostController::class, 'index']);
+        // Posts Management
+        Route::get('/posts', [AdminPostController::class, 'index'])
+            ->name('admin.posts');
 
-        Route::delete('/posts/{id}', [AdminPostController::class, 'delete']);
+        Route::get('/posts/{id}', [AdminPostController::class, 'show'])
+            ->name('admin.posts.show');
 
-        Route::delete('/posts/{id}/force', [AdminPostController::class, 'superDelete']);
+        Route::post('/posts/{id}/delete', [AdminPostController::class, 'delete'])
+            ->name('admin.posts.delete');
+
+        Route::post('/posts/{id}/toggle-status', [AdminPostController::class, 'toggleStatus'])
+            ->name('admin.posts.toggle');
+
+        Route::delete('/posts/{id}/force', [AdminPostController::class, 'superDelete'])
+            ->name('admin.posts.forceDelete');
 
         Route::get('/users', [AdminUserController::class, 'index'])
             ->name('admin.users');
@@ -155,14 +166,14 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])
             ->name('admin.users.delete');
 
-        Route::get('/admin/users/{id}/ban', [AdminUserController::class, 'ban'])
+        Route::get('/users/{id}/ban', [AdminUserController::class, 'ban'])
             ->name('admin.users.ban');
 
-        Route::get('/admin/users/{id}/unban', [AdminUserController::class, 'unban'])
+        Route::get('/users/{id}/unban', [AdminUserController::class, 'unban'])
             ->name('admin.users.unban');
 
         Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy'])
-            ->name('admin.users.delete');
+            ->name('admin.users.destroy');
 
         Route::get('/reports', [AdminReportController::class, 'index']);
 
