@@ -80,28 +80,28 @@ Route::middleware('auth')->group(function () {
     Route::delete('/items/{id}', [ItemController::class, 'deleteItem'])->name('item.delete');
 
     // ── SCENARIO A — Found Post (Amin found → Azri claims) ───────────────────
-    // 1. Azri views claim form
+    // 1. Owmer views claim form
     Route::get('/items/{id}/claim', [ClaimController::class, 'showClaimForm']);
     // 2. AJAX security answer check
     Route::post('/items/{id}/check-answer', [ClaimController::class, 'checkSecurityAnswer']);
-    // 3. Azri submits claim (auto-approved, redirects to payment OR sends pickup email)
+    // 3. Owner submits claim (auto-approved, redirects to payment OR sends pickup email)
     Route::post('/items/{id}/claim', [ClaimController::class, 'submitClaim']);
 
-    // 4. Delivery: Azri views payment page
+    // 4. Delivery: Owner views payment page
     Route::get('/claims/{id}/payment', [ClaimController::class, 'showPayment'])->name('claim.payment');
-    // 5. Delivery: Azri uploads receipt → emails Amin
+    // 5. Delivery: Owner uploads receipt → emails Amin
     Route::post('/claims/{id}/upload-receipt', [ClaimController::class, 'uploadReceipt'])->name('claims.uploadReceipt');
 
-    // 6. Pickup: Amin sets appointment → emails Azri
+    // 6. Pickup: Finder sets appointment → emails Azri
     Route::post('/items/{id}/appointment', [ClaimController::class, 'storeAppointment'])->name('items.appointment');
 
-    // 7. Amin marks item as returned/shipped
+    // 7. Finder marks item as returned/shipped
     Route::post('/items/{id}/returned', [ClaimController::class, 'markReturnedByFinder'])->name('items.markReturned');
-    // 8. Azri confirms receipt → Case Closed
+    // 8. Owner confirms receipt → Case Closed
     Route::post('/items/{id}/received', [ClaimController::class, 'confirmItemReceived'])->name('items.confirmReceived');
 
     // Dispute
-    Route::post('/items/{id}/dispute', [ItemController::class, 'reportDispute']);
+    Route::post('/items/{id}/dispute', [DisputeController::class, 'store'])->name('items.dispute');
 
     // ── SCENARIO B — Lost Post (Azri lost → Amin found it) ───────────────────
     // Amin submits "I Found This" with proof image

@@ -35,6 +35,11 @@ class ReportController extends Controller
             'message' => $request->message,
         ]);
 
+        if ($request->reason === 'wrong_security_answer') {
+        $item = Item::findOrFail($itemId);
+        $item->update(['claim_attempts' => 3]);
+}
+
         // Email admin
         try {
             $adminEmail   = config('mail.admin_email', env('ADMIN_EMAIL', 'admin@utmfoundit.com'));

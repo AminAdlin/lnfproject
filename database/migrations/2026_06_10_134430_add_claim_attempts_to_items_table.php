@@ -6,19 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
 {
     Schema::table('items', function (Blueprint $table) {
-        if (!Schema::hasColumn('items', 'status')) {
-            $table->string('status')->default('active');
-        }
+        $table->integer('claim_attempts')->default(0);
     });
 }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('items', function (Blueprint $table) {
-            $table->dropColumn('status');
+            //
         });
     }
 };
