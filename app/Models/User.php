@@ -8,11 +8,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Notifications\CustomResetPassword;    
-use App\Notifications\VerifyEmailCustom;     
+use App\Notifications\VerifyEmailCustom;   
+use Illuminate\Database\Eloquent\SoftDeletes;  
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
+    use SoftDeletes;
 
     protected $fillable = [
         'name',

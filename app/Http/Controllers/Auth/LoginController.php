@@ -46,7 +46,17 @@ class LoginController extends Controller
             ]);
         }
 
-        if (!Auth::user()->hasVerifiedEmail()) {
+        $user = Auth::user();
+
+        if ($user->is_banned) {
+            Auth::logout();
+
+            return back()->withErrors([
+                'email' => 'Your account has been banned by admin.',
+            ]);
+        }
+
+        if (!$user->hasVerifiedEmail()) {
             Auth::logout();
             return back()->withErrors([
             'email' => 'Please verify your email before login.',

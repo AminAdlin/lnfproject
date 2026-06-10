@@ -10,35 +10,18 @@ class AdminUserController extends Controller
 {
     public function index(Request $request)
     {
-        $users = User::query()
+        $search = $request->search;
 
-            ->when(
-                $request->student_id,
-                fn($q) =>
-                    $q->where(
-                        'student_id',
-                        'LIKE',
-                        '%'.$request->student_id.'%'
-                    )
-            )
-
-            ->when(
-                $request->email,
-                fn($q) =>
-                    $q->where(
-                        'email',
-                        'LIKE',
-                        '%'.$request->email.'%'
-                    )
-            )
-
-            ->paginate(20);
-
-        return view(
-            'admin.users.index',
-            compact('users')
-        );
-    }
+        $users = User::where('role', 'user')
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
+                      ->orWhere('email', 'LIKE', "%{$search}%");
+                });
+            })
+            ->paginate(10);
+        return view('admin.users', compact('users'));
+}
 
     public function show($id)
     {
@@ -47,9 +30,35 @@ class AdminUserController extends Controller
             'claims'
         ])->findOrFail($id);
 
-        return view(
-            'admin.users.show',
-            compact('user')
-        );
+        return view('admin.users.show', compact('user'));
+    }
+
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete(); // soft delete
+
+        return redirect()->back()
+            ->with('success', 'User deleted successfully');
+    }
+
+    public function ban($id)
+    {
+        $user = User::findOrFail($id);
+
+        $user->is_banned = true;
+        $user->save();
+
+        return back()->with('success', 'User has been banned');
+    }
+
+    public function unban($id)
+    {
+        $user = User::findOrFail($id);
+
+        $user->is_banned = false;
+        $user->save();
+
+        return back()->with('success', 'User has been unbanned');
     }
 }

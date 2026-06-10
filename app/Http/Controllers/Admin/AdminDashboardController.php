@@ -17,7 +17,10 @@ class AdminDashboardController extends Controller
         return view('admin.dashboard', [
 
             'totalUsers' =>
-                User::count(),
+                User::where('role', 'user')->count(),
+
+            'totalPosts' => 
+                Item::count(),
 
             'totalLost' =>
                 Item::where('type','lost')->count(),
@@ -25,7 +28,7 @@ class AdminDashboardController extends Controller
             'totalFound' =>
                 Item::where('type','found')->count(),
 
-            'totalClaims' =>
+            'totalClaimed' =>
                 Claim::count(),
 
             'totalReports' =>
@@ -33,6 +36,9 @@ class AdminDashboardController extends Controller
 
             'totalDisputes' =>
                 Dispute::count(),
+
+            'deletedPosts' => 
+                Item::where('status', 'deleted')->count(),
 
             'recentItems' =>
                 Item::latest()->take(10)->get(),
