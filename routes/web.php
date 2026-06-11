@@ -165,7 +165,7 @@ Route::middleware('auth')->group(function () {
             ->name('admin.users.show');
 
         Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])
-            ->name('admin.users.delete');
+            ->name('admin.users.destroy');
 
         Route::get('/users/{id}/ban', [AdminUserController::class, 'ban'])
             ->name('admin.users.ban');

@@ -2,18 +2,25 @@
 
 @section('content')
 
+@if(session('success'))
+    <div id="success-alert"
+         class="mb-5 bg-green-100 border border-green-300 text-green-700 px-5 py-4 rounded-xl shadow-md">
+        {{ session('success') }}
+    </div>
+@endif
+
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-6">
 
     <!-- SEARCH CARD -->
     <div class="lg:col-span-3 bg-white rounded-2xl shadow p-5">
 
-        <form method="GET" action="/admin/users"
+        <form method="GET" action="{{ route('admin.users') }}"
               class="flex flex-col sm:flex-row gap-3">
 
             <input type="text"
                 name="search"
                 value="{{ request('search') }}"
-                placeholder="Search by ID or Name..."
+                placeholder="Search by ID or Email..."
                 class="flex-1 border border-gray-300 rounded-xl px-4 py-3
                        focus:ring-2 focus:ring-red-700 focus:outline-none">
 

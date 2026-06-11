@@ -15,8 +15,8 @@ class AdminUserController extends Controller
         $users = User::where('role', 'user')
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'LIKE', "%{$search}%")
-                      ->orWhere('student_id', 'LIKE', "%{$search}%");
+                    $q->where('student_id', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%");
                 });
             })
             ->paginate(10);
@@ -38,7 +38,8 @@ class AdminUserController extends Controller
         $user = User::findOrFail($id);
         $user->delete(); // soft delete
 
-        return redirect()->back()
+        return redirect()
+            ->route('admin.users')
             ->with('success', 'User deleted successfully');
     }
 

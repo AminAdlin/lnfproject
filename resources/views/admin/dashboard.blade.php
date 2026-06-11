@@ -36,52 +36,115 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 
     <a href="{{ route('admin.users') }}">
-        <div class="card p-6 hover:scale-105 cursor-pointer">
-            <div class="text-4xl mb-3">👥</div>
-            <h1 class="text-5xl font-bold text-red-800">{{ $totalUsers }}</h1>
-            <p class="text-gray-500 mt-2">Total Users</p>
+    <div class="card relative p-6 hover:scale-105 cursor-pointer min-h-[200px]">
+
+        <!-- Big Icon -->
+        <div class="absolute top-5 right-5 text-7xl opacity-80">
+            👥
         </div>
-    </a>
+
+        <!-- Number -->
+        <h1 class="text-5xl font-bold text-red-800 mt-10">
+            {{ $totalUsers }}
+        </h1>
+
+        <!-- Label -->
+        <p class="text-gray-500 mt-2 text-lg">
+            Total Users
+        </p>
+
+    </div>
+</a>
 
     <a href="{{ route('admin.posts') }}">
-        <div class="card p-6 hover:scale-105 cursor-pointer">
-            <div class="text-4xl mb-3">📦</div>
-            <h1 class="text-5xl font-bold text-red-800">{{ $totalPosts }}</h1>
-            <p class="text-gray-500 mt-2">Total Posts</p>
+    <div class="card relative p-6 hover:scale-105 cursor-pointer min-h-[200px]">
+
+        <div class="absolute top-5 right-5 text-7xl opacity-80">
+            📦
         </div>
-    </a>
+
+        <h1 class="text-5xl font-bold text-red-800 mt-10">
+            {{ $totalPosts }}
+        </h1>
+
+        <p class="text-gray-500 mt-2 text-lg">
+            Total Posts
+        </p>
+
+    </div>
+</a>
 
     <a href="/admin/reports">
-        <div class="card p-6 hover:scale-105 cursor-pointer">
-            <div class="text-4xl mb-3">🚩</div>
-            <h1 class="text-5xl font-bold text-red-800">{{ $totalReports }}</h1>
-            <p class="text-gray-500 mt-2">Reports</p>
+    <div class="card relative p-6 hover:scale-105 cursor-pointer min-h-[200px]">
+
+        <div class="absolute top-5 right-5 text-7xl opacity-80">
+            🚩
         </div>
-    </a>
+
+        <h1 class="text-5xl font-bold text-red-800 mt-10">
+            {{ $totalReports }}
+        </h1>
+
+        <p class="text-gray-500 mt-2 text-lg">
+            Reports
+        </p>
+
+    </div>
+</a>
 
     <a href="/admin/disputes">
-        <div class="card p-6 hover:scale-105 cursor-pointer">
-            <div class="text-4xl mb-3">⚖️</div>
-            <h1 class="text-5xl font-bold text-red-800">{{ $totalDisputes }}</h1>
-            <p class="text-gray-500 mt-2">Open Disputes</p>
+    <div class="card relative p-6 hover:scale-105 cursor-pointer min-h-[200px]">
+
+        <div class="absolute top-5 right-5 text-7xl opacity-80">
+            ⚖️
         </div>
-    </a>
+
+        <h1 class="text-5xl font-bold text-red-800 mt-10">
+            {{ $totalDisputes }}
+        </h1>
+
+        <p class="text-gray-500 mt-2 text-lg">
+            Open Disputes
+        </p>
+
+    </div>
+</a>
 
     <a href="/admin/claimed">
-        <div class="card p-6 hover:scale-105 cursor-pointer">
-            <div class="text-4xl mb-3">✅</div>
-            <h1 class="text-5xl font-bold text-red-800">{{ $totalClaimed }}</h1>
-            <p class="text-gray-500 mt-2">Claimed Items</p>
+    <div class="card relative p-6 hover:scale-105 cursor-pointer min-h-[200px]">
+
+        <div class="absolute top-5 right-5 text-7xl opacity-80">
+            ✅
         </div>
-    </a>
+
+        <h1 class="text-5xl font-bold text-red-800 mt-10">
+            {{ $totalClaimed }}
+        </h1>
+
+        <p class="text-gray-500 mt-2 text-lg">
+            Claimed Items
+        </p>
+
+    </div>
+</a>
 
     <a href="/admin/deleted">
-        <div class="card p-6 hover:scale-105 cursor-pointer">
-            <div class="text-4xl mb-3">🗑️</div>
-            <h1 class="text-5xl font-bold text-red-800">{{ $deletedPosts }}</h1>
-            <p class="text-gray-500 mt-2">Deleted Posts</p>
+    <div class="card relative p-6 hover:scale-105 cursor-pointer min-h-[200px]">
+
+        <div class="absolute top-5 right-5 text-7xl opacity-80">
+            🗑️
         </div>
-    </a>
+
+        <h1 class="text-5xl font-bold text-red-800 mt-10">
+            {{ $deletedPosts }}
+        </h1>
+
+        <p class="text-gray-500 mt-2 text-lg">
+            Deleted Posts
+        </p>
+
+    </div>
+</a>
 
 </div>
 
