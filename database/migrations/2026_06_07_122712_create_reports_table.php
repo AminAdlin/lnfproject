@@ -20,10 +20,11 @@ return new class extends Migration
             'already_resolved',
             'spam_duplicate',
             'inappropriate',
+            'security_answer',
             'other'
         ]);
         $table->text('message')->nullable();
-        $table->enum('status', ['pending', 'reviewed', 'dismissed'])->default('pending');
+        $table->string('status')->default('pending');
         $table->timestamps();
     });
 }

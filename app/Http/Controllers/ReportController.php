@@ -87,4 +87,15 @@ class ReportController extends Controller
 
         return redirect('/items')->with('status', 'Report submitted. Our team will review it shortly.');
     }
+
+        public function markReviewed($id)
+        {
+            $report = Report::findOrFail($id);
+
+            $report->update([
+                'status' => 'reviewed'
+            ]);
+
+            return back()->with('success', 'Report marked as reviewed');
+        }
 }

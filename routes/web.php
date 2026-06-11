@@ -177,6 +177,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports', [AdminReportController::class, 'index']);
 
         Route::post('/reports/{id}/review', [AdminReportController::class, 'review']);
+            
+        Route::post('/reports/{id}/reviewed', [AdminReportController::class, 'markReviewed'])
+            ->name('admin.reports.reviewed');
 
         // DISPUTES
         Route::get('/disputes', [AdminDisputeController::class, 'index'])

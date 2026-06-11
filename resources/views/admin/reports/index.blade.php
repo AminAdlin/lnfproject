@@ -81,14 +81,22 @@
                         View Item
                     </a>
 
-                    <form action="/admin/reports/{{ $report->id }}/review" method="POST" class="flex-1">
-                        @csrf
-                        <button type="submit"
-                                class="w-full bg-red-700 hover:bg-red-800 text-white px-3 py-2 rounded-lg text-sm">
-                            Mark Reviewed
-                        </button>
-                    </form>
+                    @if($report->status == 'reviewed')
+    <button class="bg-green-500 text-white px-3 py-2 rounded opacity-70 cursor-not-allowed" disabled>
+        Reviewed
+    </button>
+@else
+    <form method="POST" action="{{ route('admin.reports.reviewed', $report->id) }}">
+        @csrf
 
+        <button
+            type="submit"
+            onclick="return confirm('Are you sure you want to mark this as reviewed?')"
+            class="bg-blue-500 text-white px-3 py-2 rounded">
+            Mark Reviewed
+        </button>
+    </form>
+@endif
                 </div>
 
             </div>
@@ -104,5 +112,6 @@
     </div>
 
 </div>
+
 
 @endsection
