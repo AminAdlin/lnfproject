@@ -15,6 +15,8 @@ return new class extends Migration
             $table->text('reason');
             $table->enum('status', ['open', 'resolved'])->default('open');
             $table->timestamps();
+            $table->string('status')->default('pending');
+            $table->enum('type', ['fake_receipt', 'item_not_received']);
         });
     }
 

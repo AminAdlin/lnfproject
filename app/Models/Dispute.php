@@ -25,7 +25,7 @@ class Dispute extends Model
         return $this->belongsTo(Claim::class);
     }
 
-    public function raiser()
+    public function reporter()
     {
         return $this->belongsTo(User::class, 'raised_by');
     }

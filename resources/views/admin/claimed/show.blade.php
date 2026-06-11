@@ -81,22 +81,18 @@
                 💳 Payment Information
             </h3>
 
-            @if($claim->transaction)
+        @if($claim->delivery_method === 'self_pickup')
+            <p>No payment required (Self Pickup)</p>
 
-                <div class="bg-gray-50 p-4 rounded-xl">
+        @elseif($claim->payment_receipt)
 
-                    <p>Amount: RM {{ $claim->transaction->amount }}</p>
-
-                    <p>Status: {{ strtoupper($claim->transaction->payment_status) }}</p>
-
-                    <p>Reference: {{ $claim->transaction->payment_reference ?? '-' }}</p>
-
-                </div>
+            <img src="{{ asset('storage/' . $claim->payment_receipt) }}" 
+                class="w-full rounded-lg">
 
             @else
 
                 <div class="bg-gray-100 p-4 rounded-xl text-gray-500">
-                    No payment required (Self Pickup)
+                    No receipt uploaded
                 </div>
 
             @endif

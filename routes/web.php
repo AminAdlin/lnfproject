@@ -179,11 +179,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/reports/{id}/review', [AdminReportController::class, 'review']);
 
         // DISPUTES
-        Route::get('/disputes', [AdminDisputeController::class, 'index']);
+        Route::get('/disputes', [AdminDisputeController::class, 'index'])
+            ->name('admin.disputes.index');
 
-        Route::get('/disputes/{id}', [AdminDisputeController::class, 'show']);
+        Route::get('/disputes/{id}', [AdminDisputeController::class, 'show'])
+            ->name('admin.disputes.show');
 
-        Route::post('/disputes/{id}/resolve', [AdminDisputeController::class, 'resolve']);
+        Route::post('/disputes/{id}/resolve', [AdminDisputeController::class, 'resolve'])
+            ->name('admin.disputes.resolve');
 
         Route::get('/claimed', [AdminClaimedController::class, 'index'])
             ->name('admin.claimed.index');
