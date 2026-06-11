@@ -48,13 +48,38 @@
                 </div>
             </div>
             <div class="flex items-center gap-1.5 sm:gap-3">
-                <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm">🔔</a>
+                <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm relative">
+    🔔
+    @php
+        $pendingNotifCount = \App\Models\Claim::whereHas('item', function($q) {
+            $q->where('type', 'lost')->where('user_id', auth()->id());
+        })->where('status', 'pending')->count();
+    @endphp
+    @if($pendingNotifCount > 0)
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            {{ $pendingNotifCount > 9 ? '9+' : $pendingNotifCount }}
+        </span>
+    @endif
+</a>
                 <a href="/profile" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                 👤 <span class="hidden sm:inline text-xs sm:text-sm">Profile</span>
                 </a>
-                <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
-                    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
-                </a>
+                <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5 relative">
+    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
+    @php
+        $myPendingClaims = \App\Models\Claim::where('user_id', auth()->id())
+            ->whereHas('item', function($q) {
+                $q->whereIn('status', ['active', 'awaiting_payment', 'returned_by_finder']);
+            })
+            ->whereIn('status', ['pending', 'approved'])
+            ->count();
+    @endphp
+    @if($myPendingClaims > 0)
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            {{ $myPendingClaims > 9 ? '9+' : $myPendingClaims }}
+        </span>
+    @endif
+</a>
                 <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
                 </a>
@@ -345,88 +370,91 @@
                         @endif
 
                         {{-- SECTION 5 — AWAITING PAYMENT --}}
-                        {{-- Owner sees bank details + upload form | Finder sees waiting message --}}
-                        @if($item->status === 'awaiting_payment')
+{{-- Owner sees bank details + upload form | Finder sees waiting message --}}
+@if($item->status === 'awaiting_payment')
+ 
+    @if($isOwner && $approvedClaim && $item->type === 'lost')
+        <div class="mt-4 bg-red-50 border-2 border-red-200 rounded-xl p-4 shadow-inner">
+            <p class="text-xs font-bold text-red-900 mb-2">📦 Postage Payment Required — RM10.00</p>
+ 
+            @php
+                $finderBankName  = $approvedClaim->bank_name;
+                $finderAccNumber = $approvedClaim->account_number;
+                $finderQr        = $approvedClaim ? $approvedClaim->bank_qr : null;
+            @endphp
+ 
+            <div class="bg-white rounded-lg p-3 border border-red-100 text-xs text-gray-700 mb-3">
+                <p class="font-medium text-gray-600 mb-2">Transfer to finder's account:</p>
+                <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200 font-mono space-y-1 text-sm text-gray-800">
+                    <p><span class="text-gray-400 text-xs font-sans font-bold">BANK:</span> <strong>{{ $finderBankName ?? 'Not provided' }}</strong></p>
+                    <p><span class="text-gray-400 text-xs font-sans font-bold">ACCOUNT:</span> <strong>{{ $finderAccNumber ?? 'Not provided' }}</strong></p>
+                    <p><span class="text-gray-400 text-xs font-sans font-bold">AMOUNT:</span> <strong class="text-red-800">RM 10.00</strong></p>
+                </div>
+                @if($finderQr)
+                    <div class="mt-3 pt-3 border-t border-dashed border-gray-200 text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Scan QR to Pay:</p>
+                        <img src="{{ asset('storage/' . $finderQr) }}"
+                             alt="Bank QR"
+                             onclick="openQrModal('{{ asset('storage/' . $finderQr) }}')"
+                             class="w-24 h-24 object-contain rounded-lg border border-gray-200 p-1 bg-white mx-auto cursor-zoom-in hover:opacity-80 transition">
+                        <p class="text-[10px] text-gray-400 mt-1">🔍 Tap to enlarge</p>
+                    </div>
+                @endif
+            </div>
+ 
+            {{-- Shared Shipping Address --}}
+            <div class="mb-3">
+                <label class="block text-gray-500 font-bold uppercase mb-1 text-[10px] tracking-wider">Shipping Address</label>
+                <textarea id="s5_shipping_{{ $item->id }}" rows="3"
+                          class="w-full p-2 text-xs bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:border-red-700 resize-none text-gray-800"
+                          placeholder="Receiver name, phone number, full address..."></textarea>
+            </div>
+ 
+            {{-- Pay Online --}}
+            <form method="POST" action="{{ route('payment.create', $approvedClaim->id) }}" id="online-form-{{ $item->id }}" class="mb-2">
+                @csrf
+                <input type="hidden" name="shipping_address" id="s5_online_addr_{{ $item->id }}">
+                <button type="submit"
+                    onclick="return s5PassAddress('{{ $item->id }}')"
+                    class="w-full py-2 px-4 text-xs font-bold text-white rounded-lg bg-blue-600 hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                    ⚡ Pay Online via FPX — RM10.00
+                </button>
+            </form>
+ 
+            <div class="flex items-center gap-2 my-2">
+                <div class="flex-1 h-px bg-gray-200"></div>
+                <span class="text-[10px] text-gray-400 font-bold uppercase">or manual transfer</span>
+                <div class="flex-1 h-px bg-gray-200"></div>
+            </div>
+ 
+            {{-- Manual Transfer --}}
+            <form action="{{ route('claims.uploadReceipt', $approvedClaim->id) }}" method="POST" enctype="multipart/form-data" class="space-y-2">
+                @csrf
+                <input type="hidden" name="shipping_address" id="s5_manual_addr_{{ $item->id }}">
+                <div>
+                    <label class="block text-gray-500 font-bold uppercase mb-1 text-[10px] tracking-wider">Payment Receipt (image)</label>
+                    <input type="file" name="payment_receipt_image"
+                           class="w-full text-xs bg-white border border-gray-300 rounded-lg file:mr-3 file:py-1.5 file:px-3 file:rounded-l-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 text-gray-600"
+                           accept="image/jpeg,image/png,image/jpg" required>
+                </div>
+                <button type="submit"
+                    onclick="return s5PassAddress('{{ $item->id }}', 'manual')"
+                    class="w-full py-2 px-4 text-xs font-bold text-white rounded-lg bg-red-800 hover:bg-red-900 transition flex items-center justify-center gap-2">
+                    Submit Payment & Shipping Details
+                </button>
+            </form>
+ 
+        </div>
+    @endif
+ 
+    @if($isFinder)
+        <div class="mt-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-xs shadow-sm">
+            ⏳ Waiting for the owner to complete the RM10.00 postage payment and upload their receipt.
+        </div>
+    @endif
+ 
+@endif
 
-                            @if($isOwner && $approvedClaim && $item->type === 'lost')
-                                <div class="mt-4 bg-red-50 border-2 border-red-200 rounded-xl p-4 shadow-inner">
-                                    <p class="text-xs font-bold text-red-900 mb-2">📦 Postage Payment Required — RM10.00</p>
-
-                                    @php
-                                        // Bank details always belong to the Finder:
-                                        // Scenario A (Found post) → Finder = post creator → bank on $item
-                                        // Scenario B (Lost post)  → Finder = claimant    → bank on $approvedClaim
-                                        $finderBankName  = $item->type === 'found' ? $item->bank_name      : $approvedClaim->bank_name;
-                                        $finderAccNumber = $item->type === 'found' ? $item->bank_account   : $approvedClaim->account_number;
-                                    @endphp
-
-                                    <div class="bg-white rounded-lg p-3 border border-red-100 text-xs text-gray-700 mb-4">
-                                        <p class="font-medium text-gray-600 mb-2">Transfer to finder's account:</p>
-                                        <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200 font-mono space-y-1 text-sm text-gray-800">
-                                            <p><span class="text-gray-400 text-xs font-sans font-bold">BANK:</span> <strong>{{ $finderBankName ?? 'Not provided' }}</strong></p>
-                                            <p><span class="text-gray-400 text-xs font-sans font-bold">ACCOUNT:</span> <strong>{{ $finderAccNumber ?? 'Not provided' }}</strong></p>
-                                            <p><span class="text-gray-400 text-xs font-sans font-bold">AMOUNT:</span> <strong class="text-red-800">RM 10.00</strong></p>
-                                        </div>
-                                        @php
-                                            $finderQr = $item->type === 'found' 
-                                            ? $item->bank_qr 
-                                            : ($approvedClaim ? $approvedClaim->bank_qr : null);
-                                        @endphp
-                                        @if($finderQr)
-                                            <div class="mt-3 pt-3 border-t border-dashed border-gray-200 text-center">
-                                                <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Scan QR to Pay:</p>
-                                                <img src="{{ asset('storage/' . $finderQr) }}"
-                                                     alt="Bank QR"
-                                                     onclick="openQrModal('{{ asset('storage/' . $finderQr) }}')"
-                                                     class="w-24 h-24 object-contain rounded-lg border border-gray-200 p-1 bg-white mx-auto cursor-zoom-in hover:opacity-80 transition">
-                                                <p class="text-[10px] text-gray-400 mt-1">🔍 Tap to enlarge</p>
-                                            </div>
-                                        @endif
-                                    </div>
-
-                                    {{-- Pay Online --}}
-<form method="POST" action="{{ route('payment.create', $approvedClaim->id) }}" class="mb-2">
-    @csrf
-    <button type="submit"
-        class="w-full py-2 px-4 text-xs font-bold text-white rounded-lg bg-blue-600 hover:bg-blue-700 transition flex items-center justify-center gap-2">
-        ⚡ Pay Online via FPX — RM10.00
-    </button>
-</form>
-
-<div class="flex items-center gap-2 my-2">
-    <div class="flex-1 h-px bg-gray-200"></div>
-    <span class="text-[10px] text-gray-400 font-bold uppercase">or manual transfer</span>
-    <div class="flex-1 h-px bg-gray-200"></div>
-</div>
-
-                                    <form action="{{ route('claims.uploadReceipt', $approvedClaim->id) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
-                                        @csrf
-                                        <div>
-                                            <label class="block text-gray-500 font-bold uppercase mb-1 text-[10px] tracking-wider">Shipping Address</label>
-                                            <textarea name="shipping_address" rows="3"
-                                                      class="w-full p-2 text-xs bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:border-red-700 resize-none text-gray-800"
-                                                      placeholder="Receiver name, phone number, full address..." required>{{ old('shipping_address') }}</textarea>
-                                        </div>
-                                        <div>
-                                            <label class="block text-gray-500 font-bold uppercase mb-1 text-[10px] tracking-wider">Payment Receipt (image)</label>
-                                            <input type="file" name="payment_receipt_image"
-                                                   class="w-full text-xs bg-white border border-gray-300 rounded-lg file:mr-3 file:py-1.5 file:px-3 file:rounded-l-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 text-gray-600"
-                                                   accept="image/jpeg,image/png,image/jpg" required>
-                                        </div>
-                                        <button type="submit" class="w-full py-2 px-4 text-xs font-bold text-white rounded-lg bg-red-800 hover:bg-red-900 transition flex items-center justify-center gap-2">
-                                            Submit Payment & Shipping Details
-                                        </button>
-                                    </form>
-                                </div>
-                            @endif
-
-                            @if($isFinder)
-                                <div class="mt-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-xs shadow-sm">
-                                    ⏳ Waiting for the owner to complete the RM10.00 postage payment and upload their receipt.
-                                </div>
-                            @endif
-
-                        @endif
 
                         {{-- SECTION 6 — AWAITING APPOINTMENT --}}
                         {{-- Finder sees form to set date/time/location | Owner sees waiting message --}}
@@ -664,6 +692,20 @@ document.getElementById('dispute-modal').style.display = 'none';
 </script>
 
     <script>
+
+        function s5PassAddress(itemId, type = 'online') {
+    const addr = document.getElementById('s5_shipping_' + itemId).value.trim();
+    if (!addr) {
+        alert('Please fill in your shipping address first.');
+        return false;
+    }
+    if (type === 'manual') {
+        document.getElementById('s5_manual_addr_' + itemId).value = addr;
+    } else {
+        document.getElementById('s5_online_addr_' + itemId).value = addr;
+    }
+    return true;
+}
         function confirmLogout() {
             Swal.fire({
                 title: 'Are you sure?',

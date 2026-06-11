@@ -129,6 +129,13 @@
                 </div>
             @endif
 
+            @if($isLocked)
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center mb-4">
+        <p class="text-sm font-bold text-red-800 mb-1">🔒 Access Blocked</p>
+        <p class="text-xs text-gray-500">You have been blocked from claiming this item due to too many incorrect attempts.</p>
+    </div>
+@else
+
             <form method="POST" action="/items/{{ $item->id }}/claim" id="claim-form">
                 @csrf
 
@@ -194,6 +201,7 @@
                 </div>
 
             </form>
+            @endif
         </div>
 
     </div>
@@ -253,8 +261,10 @@
         })
         .then(res => res.json())
         .then(data => {
+            console.log(data);
             if (data.success) {
                 // Correct — submit form
+                console.log('submitting form:', document.getElementById('claim-form'));
                 document.getElementById('claim-form').submit();
             } else {
                 wrongAttempts++;

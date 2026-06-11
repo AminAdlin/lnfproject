@@ -6,6 +6,8 @@
     <title>My Claims - UTM FoundIt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * { font-family: 'Inter', sans-serif; }
         body {
@@ -40,52 +42,69 @@
 </head>
 <body class="min-h-screen">
 
-    {{-- Navbar --}}
     <nav class="navbar-texture text-white sticky top-0 z-50">
         <div class="navbar-inner flex justify-between items-center px-4 sm:px-8 py-3 sm:py-4">
-            
-            {{-- Logo + Brand --}}
             <div class="flex items-center gap-3 sm:gap-4">
                 <div class="bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-lg flex-shrink-0">
                     <img src="{{ asset('images/logo_utmfoundit_crop.png') }}" alt="UTM FoundIt Logo" class="h-9 w-9 sm:h-12 sm:w-12 object-contain">
                 </div>
                 <div>
-                    <h1 class="brand-title text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
-                    <p class="brand-sub text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
+                    <h1 class="text-lg sm:text-2xl font-bold tracking-wide leading-tight">UTM FoundIt</h1>
+                    <p class="text-red-200 text-xs tracking-wider hidden sm:block">LOST & FOUND SYSTEM</p>
                 </div>
             </div>
-
             <div class="flex items-center gap-1.5 sm:gap-3">
-                <a href="/items" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
-                    📋 <span class="hidden sm:inline text-xs sm:text-sm">All Items</span>
+                {{-- Bell --}}
+                <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm relative">
+                    🔔
+                    @php
+                        $pendingNotifCount = \App\Models\Claim::whereHas('item', function($q) {
+                            $q->where('type', 'lost')->where('user_id', auth()->id());
+                        })->where('status', 'pending')->count();
+                    @endphp
+                    @if($pendingNotifCount > 0)
+                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                            {{ $pendingNotifCount > 9 ? '9+' : $pendingNotifCount }}
+                        </span>
+                    @endif
+                </a>
+                {{-- My Claims --}}
+                <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5 relative">
+                    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
+                    @php
+                        $myPendingClaims = \App\Models\Claim::where('user_id', auth()->id())
+                            ->whereHas('item', function($q) {
+                                $q->whereIn('status', ['active', 'awaiting_payment', 'returned_by_finder']);
+                            })
+                            ->whereIn('status', ['pending', 'approved'])
+                            ->count();
+                    @endphp
+                    @if($myPendingClaims > 0)
+                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                            {{ $myPendingClaims > 9 ? '9+' : $myPendingClaims }}
+                        </span>
+                    @endif
+                </a>
+                <a href="/profile" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                    👤 <span class="hidden sm:inline text-xs sm:text-sm">Profile</span>
                 </a>
                 <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
                 </a>
-                
-                {{-- Logout --}}
-                <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
-                    @csrf
-                </form>
+                <form id="logout-form" method="POST" action="{{ route('logout') }}" class="hidden">@csrf</form>
                 <button type="button" onclick="confirmLogout()" class="bg-white text-red-800 text-xs sm:text-sm px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-bold hover:bg-red-50 transition shadow-lg flex items-center gap-1.5">
-                    <span>🚪</span>
-                    <span>Logout</span>
+                    <span>🚪</span><span>Logout</span>
                 </button>
-
-                <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             </div>
         </div>
     </nav>
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
 
-        {{-- Back Button --}}
         <a href="/dashboard" class="inline-flex items-center gap-2 text-sm text-red-800 font-semibold mb-4 hover:gap-3 transition-all">
             ← Back to Dashboard
         </a>
 
-        {{-- Banner --}}
         <div class="banner-texture text-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-y-40 translate-x-40"></div>
             <div class="absolute bottom-0 left-0 w-64 h-64 bg-white opacity-5 rounded-full translate-y-20 -translate-x-20"></div>
@@ -124,7 +143,9 @@
             <div class="space-y-3">
                 @foreach($claims as $claim)
                     <div class="claim-item card-texture rounded-2xl shadow-md p-4 sm:p-5">
-                        <div class="flex justify-between items-start gap-3">
+
+                        {{-- Row 1: Item info + Status badge --}}
+                        <div class="flex justify-between items-center gap-3">
                             <div class="flex gap-3 sm:gap-4 min-w-0">
                                 <div class="bg-gradient-to-br from-red-100 to-red-200 text-red-800 rounded-2xl p-3 sm:p-4 text-2xl sm:text-3xl shadow-inner flex-shrink-0">📦</div>
                                 <div class="min-w-0">
@@ -149,51 +170,57 @@
                                     <span class="text-xs bg-red-100 text-red-700 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full font-bold border border-red-200 uppercase tracking-wider whitespace-nowrap">❌ Rejected</span>
                                 @endif
                             </div>
-                        </div>
+                        </div>{{-- end row 1 --}}
 
-                        {{-- STEP 5: DOUBLE CONFIRMATION SUITE ACTIONS --}}
-                        @if($claim->status === 'approved' && !$claim->item->claimant_confirmed && $claim->item->status !== 'disputed')
-                            <div class="mt-4 pt-4 border-t border-dashed border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-red-50/50 p-3 rounded-xl">
-                                <div>
-                                    <p class="text-xs font-bold text-red-900 flex items-center gap-1">📦 Action Required: Package Handover Verification</p>
-                                    <p class="text-[11px] text-gray-500 mt-0.5">Please acknowledge if you have received your package to close this transaction successfully.</p>
-                                </div>
-                                <div class="flex items-center gap-2 self-end sm:self-center">
-                                    {{-- Confirm Received Button --}}
-                                    <form action="/items/{{ $claim->item->id }}/received" method="POST" onsubmit="return confirm('Are you sure you have received this item? This action will log your verification entry.');">
-                                        @csrf
-                                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-3 rounded-xl text-xs transition shadow-sm">
-                                            Yes, Item Received
-                                        </button>
-                                    </form>
-
-                                    {{-- Toggle Dispute Form Button --}}
-                                    <button type="button" onclick="toggleDisputeForm({{ $claim->item->id }})" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 px-3 rounded-xl text-xs transition">
-                                        No, Report Issue
-                                    </button>
-                                </div>
+                        {{-- Row 2: Status info --}}
+                        @if($claim->item->status === 'awaiting_payment')
+                            <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-xs text-yellow-800 font-medium">
+                                💳 Payment required — please complete your RM10 delivery payment.
+                                <a href="{{ route('claim.payment', $claim->id) }}" class="font-bold underline ml-1">Pay Now →</a>
                             </div>
+                        @elseif($claim->item->status === 'awaiting_appointment')
+                            <div class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-800 font-medium">
+                                📅 Waiting for the finder to set a pickup appointment.
+                            </div>
+                        @elseif($claim->item->status === 'claimed' && $claim->delivery_method === 'delivery')
+                            <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 font-medium">
+                                📦 Payment received — waiting for finder to ship your item.
+                            </div>
+                        @elseif($claim->item->status === 'claimed' && $claim->delivery_method === 'self_pickup')
+                            @if($claim->appointment_date)
+                                <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 font-medium">
+                                    📅 <strong>Appointment set!</strong><br>
+                                    Date: {{ \Carbon\Carbon::parse($claim->appointment_date)->format('d M Y, h:i A') }}<br>
+                                    Location: {{ $claim->appointment_location }}
+                                </div>
+                            @else
+                                <div class="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-800 font-medium">
+                                    📅 Waiting for finder to set pickup appointment.
+                                </div>
+                            @endif
+                        @elseif($claim->item->status === 'disputed')
+                            <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 font-medium">
+                                ⚠️ This case is under dispute investigation.
+                            </div>
+                        @endif
 
-                            {{-- Hidden Dispute Reporting Textarea Box --}}
-                            <div id="dispute-box-{{ $claim->item->id }}" class="hidden mt-3 p-4 bg-white border border-red-100 rounded-xl shadow-inner">
-                                <form action="/items/{{ $claim->item->id }}/dispute" method="POST">
+                        {{-- Row 3: Item Received button (only when finder marked as returned) --}}
+                        @if($claim->status === 'approved' && $claim->item->status === 'returned_by_finder')
+                            <div class="mt-4 pt-4 border-t border-dashed border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-green-50 p-3 rounded-xl">
+                                <div>
+                                    <p class="text-xs font-bold text-green-900">📦 Item Handed Over — Please Confirm Receipt</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5">The finder has marked your item as handed over. Please confirm once you receive it.</p>
+                                </div>
+                                <form action="/items/{{ $claim->item->id }}/received" method="POST"
+                                      onsubmit="return confirm('Confirm that you have received this item? This will close the case.')">
                                     @csrf
-                                    <label class="block text-[11px] font-bold text-red-800 uppercase mb-1.5 tracking-wider">State Your Reason For Raising A Dispute Case:</label>
-                                    <textarea name="dispute_reason" required class="w-full p-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-red-800" rows="3" placeholder="Examples: Tracking number provided is completely invalid, Finder went uncontactable, Item arrived heavily damaged..."></textarea>
-                                    <div class="mt-2.5 flex justify-end gap-2">
-                                        <button type="button" onclick="toggleDisputeForm({{ $claim->item->id }})" class="text-xs font-bold text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-100">Cancel</button>
-                                        <button type="submit" class="bg-red-800 text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:bg-red-900 transition shadow-sm">Submit Incident Report</button>
-                                    </div>
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm whitespace-nowrap">
+                                        ✅ Yes, Item Received
+                                    </button>
                                 </form>
                             </div>
                         @endif
 
-                        {{-- Small Alert Message when Claimant Confirms but Finder is Pending --}}
-                        @if($claim->item->claimant_confirmed && !$claim->item->finder_confirmed && $claim->item->status !== 'returned')
-                            <div class="mt-3 p-2.5 bg-blue-50/50 border border-blue-100 rounded-xl text-[11px] text-blue-700 font-medium">
-                                ℹ️ You verified asset receipt. Awaiting completion response handshake signature from the Finder.
-                            </div>
-                        @endif
                     </div>
                 @endforeach
             </div>
@@ -212,33 +239,24 @@
 
     </div>
 
-<script>
-    function toggleDisputeForm(id) {
-        var x = document.getElementById('dispute-box-' + id);
-        if (x.classList.contains('hidden')) {
-            x.classList.remove('hidden');
-        } else {
-            x.classList.add('hidden');
+    <script>
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You will need to login again to access your dashboard.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#800000',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, logout!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            })
         }
-    }
-
-    function confirmLogout() {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You will need to login again to access your dashboard.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#800000',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, logout!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('logout-form').submit();
-            }
-        })
-    }
-</script>
+    </script>
 </body>
 </html>

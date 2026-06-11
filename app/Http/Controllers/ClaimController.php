@@ -57,24 +57,57 @@ class ClaimController extends Controller
             return back()->with('error', 'You have already submitted a claim for this item.');
         }
 
-        return view('auth.claim', compact('item'));
+        $attemptRecord = \App\Models\ClaimAttempt::where('item_id', $id)
+                      ->where('user_id', auth()->id())
+                      ->first();
+        $isLocked = $attemptRecord && $attemptRecord->locked;
+
+    return view('auth.claim', compact('item', 'isLocked'));
     }
 
     public function checkSecurityAnswer(Request $request, $id)
-    {
-        $item = Item::findOrFail($id);
+{
+    $item = Item::findOrFail($id);
 
-        if (password_verify($request->answer, $item->security_answer)) {
-            return response()->json(['success' => true]);
-        }
+    // Check attempt record for this user + item
+    $attemptRecord = \App\Models\ClaimAttempt::firstOrCreate([
+        'item_id' => $item->id,
+        'user_id' => auth()->id(),
+    ]);
 
-        return response()->json(['success' => false, 'message' => 'Incorrect answer. Please try again.']);
+    // Block if already locked
+    if ($attemptRecord->locked) {
+        return response()->json([
+            'success' => false,
+            'locked'  => true,
+            'message' => 'You have been blocked from claiming this item.',
+        ]);
     }
 
+    if (strtolower(trim($request->answer)) === strtolower(trim($item->security_answer))) {
+        return response()->json(['success' => true]);
+    }
+
+    // Increment attempts
+    $attemptRecord->increment('attempts');
+
+    $locked = $attemptRecord->attempts >= 3;
+    if ($locked) {
+        $attemptRecord->update(['locked' => true]);
+    }
+
+    return response()->json([
+        'success'      => false,
+        'attempts'     => $attemptRecord->attempts,
+        'attemptsLeft' => max(0, 3 - $attemptRecord->attempts),
+        'locked'       => $locked,
+    ]);
+}
+
     /**
-     * Azri jawab security question betul → claim terus APPROVED
+     * Owner jawab security question betul → claim terus APPROVED
      * Delivery  → redirect ke payment page
-     * Pickup    → email Amin untuk set appointment, redirect ke items
+     * Pickup    → email Finder untuk set appointment, redirect ke items
      */
     public function submitClaim(Request $request, $id)
     {
@@ -86,7 +119,7 @@ class ClaimController extends Controller
         ]);
 
         // Security question must be correct
-        if (!password_verify($request->answer, $item->security_answer)) {
+        if (strtolower(trim($request->answer)) !== strtolower(trim($item->security_answer))) {
             return back()->withErrors(['answer' => 'Incorrect answer. Please try again.'])->withInput();
         }
 
@@ -103,11 +136,11 @@ class ClaimController extends Controller
             // Update item status → awaiting payment
             $item->update(['status' => 'awaiting_payment']);
 
-            // Redirect Azri to payment page
+            // Redirect Owner to payment page
             return redirect()->route('claim.payment', $claim->id);
         }
 
-        // Self-pickup → email Amin to set appointment
+        // Self-pickup → email Finder to set appointment
         $item->update(['status' => 'awaiting_appointment']);
 
         try {
@@ -143,7 +176,7 @@ class ClaimController extends Controller
     /*
     |--------------------------------------------------------------------------
     | PAYMENT PAGE — Scenario A Delivery
-    | Azri uploads receipt → email Amin
+    | Owner uploads receipt → email Finder
     |--------------------------------------------------------------------------
     */
 
@@ -175,7 +208,7 @@ class ClaimController extends Controller
 
         ['owner_user' => $ownerUser, 'finder_user' => $finderUser] = $this->resolveRoles($item, $claim);
 
-        // Only Owner (Azri) may upload
+        // Only Owner may upload
         if (auth()->id() !== $ownerUser->id) {
             return back()->with('error', 'Only the item owner can submit payment.');
         }
@@ -187,10 +220,10 @@ class ClaimController extends Controller
             'shipping_address' => $request->shipping_address,
         ]);
 
-        // Now Amin needs to ship → status: claimed
+        //  Finder needs to ship → status: claimed
         $item->update(['status' => 'claimed']);
 
-        // Email Amin: receipt received, please ship
+        // Email Finder: receipt received, please ship
         try {
             $absPath     = storage_path('app/public/' . $path);
             $finderEmail = $finderUser->email;
@@ -236,7 +269,7 @@ class ClaimController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | APPOINTMENT — Amin sets date, time, location (Pickup only)
+    | APPOINTMENT — Finder sets date, time, location (Pickup only)
     | Triggered from items.blade when status = awaiting_appointment
     |--------------------------------------------------------------------------
     */
@@ -257,7 +290,6 @@ class ClaimController extends Controller
 
         ['finder_user' => $finderUser, 'owner_user' => $ownerUser] = $this->resolveRoles($item, $claim);
 
-        // Only Finder (Amin) sets appointment
         if (auth()->id() !== $finderUser->id) {
             return back()->with('error', 'Only the finder can set the appointment.');
         }
@@ -269,7 +301,6 @@ class ClaimController extends Controller
 
         $item->update(['status' => 'claimed']);
 
-        // Email Azri: appointment confirmed, please show up
         try {
             $appDate    = \Carbon\Carbon::parse($request->appointment_date)->format('d M Y, h:i A');
             $appLoc     = $request->appointment_location;
@@ -630,13 +661,16 @@ class ClaimController extends Controller
         return view('auth.finder-claims', compact('items'));
     }
 
-    public function myClaims()
-    {
-        $claims = Claim::with('item')
-                       ->where('user_id', auth()->id())
-                       ->orderBy('created_at', 'desc')
-                       ->get();
+public function myClaims()
+{
+    $claims = Claim::with('item')
+                   ->where('user_id', auth()->id())
+                   ->whereHas('item', function($q) {
+                       $q->where('type', 'found');
+                   })
+                   ->orderBy('created_at', 'desc')
+                   ->get();
 
-        return view('auth.my-claims', compact('claims'));
-    }
+    return view('auth.my-claims', compact('claims'));
+}
 }

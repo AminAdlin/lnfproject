@@ -54,9 +54,25 @@
                 </div>
             </div>
             <div class="flex items-center gap-1.5 sm:gap-3">
-                <a href="/items" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
-                    <span>📋</span><span class="hidden sm:inline text-xs sm:text-sm">All Items</span>
+                <a href="/profile" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
+                👤 <span class="hidden sm:inline text-xs sm:text-sm">Profile</span>
                 </a>
+                <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5 relative">
+    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
+    @php
+        $myPendingClaims = \App\Models\Claim::where('user_id', auth()->id())
+            ->whereHas('item', function($q) {
+                $q->whereIn('status', ['active', 'awaiting_payment', 'returned_by_finder']);
+            })
+            ->whereIn('status', ['pending', 'approved'])
+            ->count();
+    @endphp
+    @if($myPendingClaims > 0)
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            {{ $myPendingClaims > 9 ? '9+' : $myPendingClaims }}
+        </span>
+    @endif
+</a>
                 <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     <span>🏠</span><span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
                 </a>
@@ -69,9 +85,11 @@
     </nav>
 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-    <a href="/dashboard" class="inline-flex items-center gap-2 text-sm text-red-800 font-semibold mb-4 hover:gap-3 transition-all">
-    ← Back to Dashboard
-    </a>
+
+        <a href="/dashboard" class="inline-flex items-center gap-2 text-sm text-red-800 font-semibold mb-4 hover:gap-3 transition-all">
+            ← Back to Dashboard
+        </a>
+
         {{-- Banner --}}
         <div class="banner-texture text-white rounded-3xl p-6 sm:p-8 mb-8 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-y-40 translate-x-40"></div>
@@ -83,34 +101,79 @@
             </div>
         </div>
 
-        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Your Notifications</p>
+        @if (session('status'))
+            <div class="mb-5 text-sm text-green-700 bg-green-50 border border-green-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm">
+                ✅ <span class="font-medium">{{ session('status') }}</span>
+            </div>
+        @endif
+
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Found Notifications ({{ $notifications->count() }})</p>
 
         @if($notifications->count() > 0)
             <div class="space-y-3">
-                @foreach($notifications as $notification)
+                @foreach($notifications as $claim)
                     <div class="notification-item card-texture rounded-2xl shadow-md p-5">
                         <div class="flex justify-between items-start mb-3">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center text-xl shadow-inner">🙋</div>
                                 <div>
-                                    <p class="font-extrabold text-gray-800">{{ $notification->sender_name }}</p>
-                                    <p class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}</p>
+                                    <p class="font-extrabold text-gray-800">{{ $claim->user->name }}</p>
+                                    <p class="text-xs text-gray-400">{{ $claim->created_at->diffForHumans() }}</p>
                                 </div>
                             </div>
-                            @if(!$notification->is_read)
-                                <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-bold border border-red-200 uppercase tracking-wider">New</span>
+                            {{-- Status badge --}}
+                            @if($claim->status === 'pending')
+                                <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full font-bold border border-yellow-200 uppercase tracking-wider">Pending</span>
+                            @elseif($claim->status === 'approved')
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold border border-green-200 uppercase tracking-wider">Approved</span>
+                            @elseif($claim->status === 'rejected')
+                                <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-bold border border-gray-200 uppercase tracking-wider">Rejected</span>
+                            @elseif($claim->status === 'closed')
+                                <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full font-bold border border-blue-200 uppercase tracking-wider">Closed</span>
                             @endif
                         </div>
 
+                        {{-- Item info --}}
                         <div class="bg-red-50 rounded-xl p-3 mb-3 border border-red-100">
-                            <p class="text-xs text-red-800 font-bold mb-1 uppercase tracking-wider">About: {{ $notification->item_title }}</p>
-                            <p class="text-sm text-gray-700 font-medium">{{ $notification->message }}</p>
+                            <p class="text-xs text-red-800 font-bold mb-1 uppercase tracking-wider">About: {{ $claim->item->title }}</p>
+                            @if($claim->message)
+                                <p class="text-sm text-gray-700 font-medium">"{{ $claim->message }}"</p>
+                            @endif
                         </div>
 
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 font-semibold">📞 Contact:</span>
-                            <span class="text-xs font-bold text-red-800">{{ $notification->contact }}</span>
+                        {{-- Contact + Bank info --}}
+                        <div class="space-y-1.5">
+                            @if($claim->contact)
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500 font-semibold">📞 Contact:</span>
+                                    <span class="text-xs font-bold text-red-800">{{ $claim->contact }}</span>
+                                </div>
+                            @endif
+                            @if($claim->bank_name)
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-500 font-semibold">🏦 Bank:</span>
+                                    <span class="text-xs font-bold text-gray-700">{{ $claim->bank_name }} — {{ $claim->account_number }}</span>
+                                </div>
+                            @endif
                         </div>
+
+                        {{-- Proof image --}}
+                        @if($claim->proof_image)
+                            <div class="mt-3 pt-3 border-t border-gray-100">
+                                <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Proof Image:</p>
+                                <img src="{{ asset('storage/' . $claim->proof_image) }}"
+                                     alt="Proof"
+                                     class="w-full max-h-48 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition"
+                                     onclick="window.open(this.src)">
+                            </div>
+                        @endif
+
+                        <div class="mt-3 pt-3 border-t border-gray-100">
+    <a href="/items" class="text-xs font-bold text-red-800 hover:underline">
+        → Go to Items to approve or reject
+    </a>
+</div>
+
                     </div>
                 @endforeach
             </div>
@@ -120,7 +183,10 @@
                     <span class="text-4xl">🔔</span>
                 </div>
                 <p class="text-gray-600 font-bold text-lg">No notifications yet</p>
-                <p class="text-gray-400 text-sm mt-1">When someone finds your lost item they will notify you here</p>
+                <p class="text-gray-400 text-sm mt-1 mb-6">When someone finds your lost item, they will notify you here</p>
+                <a href="/report-lost" class="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-900 hover:to-red-700 text-white text-sm font-bold py-2.5 px-6 rounded-xl transition shadow-md">
+                    Report Lost Item
+                </a>
             </div>
         @endif
 

@@ -60,7 +60,7 @@ class ItemController extends Controller
             'type' => 'found',
             'status' => 'active',
             'security_question' => $request->security_question,
-            'security_answer' => bcrypt($request->security_answer),
+            'security_answer' => $request->security_answer,
             'bank_name' => $request->bank_name,
             'bank_account' => $request->bank_account,
             'bank_qr' => $qrPath,

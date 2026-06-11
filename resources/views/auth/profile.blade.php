@@ -63,10 +63,35 @@
 
             {{-- Nav Actions --}}
             <div class="flex items-center gap-1.5 sm:gap-3">
-                <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm">🔔</a>
-                <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
-                    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
-                </a>
+                <a href="/notifications" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm relative">
+    🔔
+    @php
+        $pendingNotifCount = \App\Models\Claim::whereHas('item', function($q) {
+            $q->where('type', 'lost')->where('user_id', auth()->id());
+        })->where('status', 'pending')->count();
+    @endphp
+    @if($pendingNotifCount > 0)
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            {{ $pendingNotifCount > 9 ? '9+' : $pendingNotifCount }}
+        </span>
+    @endif
+</a>
+                <a href="/my-claims" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5 relative">
+    🔐 <span class="hidden sm:inline text-xs sm:text-sm">My Claims</span>
+    @php
+        $myPendingClaims = \App\Models\Claim::where('user_id', auth()->id())
+            ->whereHas('item', function($q) {
+                $q->whereIn('status', ['active', 'awaiting_payment', 'returned_by_finder']);
+            })
+            ->whereIn('status', ['pending', 'approved'])
+            ->count();
+    @endphp
+    @if($myPendingClaims > 0)
+        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            {{ $myPendingClaims > 9 ? '9+' : $myPendingClaims }}
+        </span>
+    @endif
+</a>
                 <a href="/dashboard" class="nav-pill glass rounded-full px-2.5 sm:px-4 py-1.5 sm:py-2 text-sm flex items-center gap-1.5">
                     🏠 <span class="hidden sm:inline text-xs sm:text-sm">Dashboard</span>
                 </a>
