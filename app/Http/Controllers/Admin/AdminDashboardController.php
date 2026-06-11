@@ -38,7 +38,7 @@ class AdminDashboardController extends Controller
                 Dispute::count(),
 
             'deletedPosts' => 
-                Item::where('status', 'deleted')->count(),
+                Item::onlyTrashed()->count(),
 
             'recentItems' =>
                 Item::latest()->take(10)->get(),

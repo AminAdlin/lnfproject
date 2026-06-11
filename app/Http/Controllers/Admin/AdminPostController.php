@@ -48,22 +48,15 @@ public function index(Request $request)
 
     public function toggleStatus($id)
     {
-        $post = Item::findOrFail($id);
-
-    if ($post->status == 'active') {
-        $post->status = 'closed';
-        } else {
-        $post->status = 'active';
-        }
-
-        $post->save();
-
         return back()->with('status', 'Post status updated successfully.');
     }
 
     public function delete($id)
     {
         $post = Item::findOrFail($id);
+
+        $post->deleted_by = auth()->user()->name;
+        $post->save();
 
         $post->delete();
 

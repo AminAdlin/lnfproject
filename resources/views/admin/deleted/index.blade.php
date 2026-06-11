@@ -2,6 +2,12 @@
 
 @section('content')
 
+@if(session('success'))
+    <div class="mb-5 bg-green-100 border border-green-300 text-green-700 px-5 py-4 rounded-xl shadow-md">
+        {{ session('success') }}
+    </div>
+@endif
+
 <div class="max-w-6xl mx-auto p-6">
 
     <h1 class="text-3xl font-bold mb-6 text-red-800">
@@ -42,14 +48,27 @@
 
                 <div class="mt-4 flex gap-2">
 
-                    <a href="/admin/posts/{{ $item->id }}"
-                       class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm">
-                        View Original
-                    </a>
+                    <a href="{{ route('admin.deleted.show',$item->id) }}"
+                    class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm">
 
-                    <button class="flex-1 bg-red-700 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-800">
+                    View Original
+
+                </a>
+
+                    <form action="{{ route('admin.deleted.restore', $item->id) }}"
+                        method="POST"
+                        class="flex-1"
+                        onsubmit="return confirm('Are you sure you want to restore this post?')">
+
+                    @csrf
+
+                    <button
+                        type="submit"
+                        class="w-full bg-green-700 hover:bg-green-800 text-white px-3 py-2 rounded-lg text-sm">
                         Restore
                     </button>
+
+                    </form>
 
                 </div>
 

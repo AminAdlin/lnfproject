@@ -98,16 +98,16 @@
                     Status
                 </p>
 
-                @if($post->status=="active")
+                @if($post->status == 'returned')
 
-                    <span class="bg-green-100 text-green-700 px-4 py-1 rounded-full">
-                        OPEN
+                    <span class="bg-red-100 text-red-700 px-4 py-1 rounded-full">
+                        CLOSED CASE
                     </span>
 
                 @else
 
-                    <span class="bg-gray-200 text-gray-700 px-4 py-1 rounded-full">
-                        CLOSED
+                    <span class="bg-green-100 text-green-700 px-4 py-1 rounded-full">
+                        OPEN CASE
                     </span>
 
                 @endif
@@ -169,23 +169,6 @@
                 class="bg-red-700 hover:bg-red-800 text-white px-5 py-2 rounded-lg">
                 🗑 Delete Post
             </button>
-
-            </form>
-
-            <form action="{{ route('admin.posts.toggle',$post->id) }}" method="POST">
-
-                @csrf
-
-                <button
-                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-lg">
-
-                    @if($post->status=="active")
-                        🔒 Close Case
-                    @else
-                        🔓 Open Case
-                    @endif
-
-                </button>
 
             </form>
 

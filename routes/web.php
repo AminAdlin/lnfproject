@@ -186,9 +186,19 @@ Route::middleware('auth')->group(function () {
         Route::post('/disputes/{id}/resolve', [AdminDisputeController::class, 'resolve']);
 
         Route::get('/claimed', [AdminClaimedController::class, 'index'])
-            ->name('admin.claimed');
+            ->name('admin.claimed.index');
+
+        Route::get('/claimed/{id}', [AdminClaimedController::class, 'show'])
+            ->name('admin.claimed.show');
 
         Route::get('/deleted', [AdminDeletedController::class, 'index'])
             ->name('admin.deleted');
+
+        Route::get('/deleted/{id}', [AdminDeletedController::class, 'show'])
+            ->name('admin.deleted.show');
+
+        Route::post('/deleted/{id}/restore',
+            [AdminDeletedController::class,'restore'])
+            ->name('admin.deleted.restore');
     });
 });

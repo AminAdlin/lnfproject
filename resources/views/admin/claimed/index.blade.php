@@ -18,49 +18,34 @@
 
             <div class="bg-white rounded-2xl shadow p-5">
 
-                <h2 class="font-bold text-lg text-gray-800">
-                    Claim #{{ $claim->id }}
-                </h2>
+    <h2 class="font-bold text-lg text-gray-800">
+        Claim #{{ $claim->id }}
+    </h2>
 
-                <p class="text-sm text-gray-500 mt-1">
-                    📦 Item ID: {{ $claim->item_id }}
-                </p>
+    <p class="text-sm text-gray-500 mt-1">
+        📦 Item ID: {{ $claim->item_id }}
+    </p>
 
-                <p class="text-sm text-gray-500">
-                    👤 Claimer: {{ $claim->user_id }}
-                </p>
+    <p class="text-sm text-gray-500">
+        👤 Claimer ID: {{ $claim->user_id }}
+    </p>
 
-                <div class="mt-3">
-                    <span class="text-xs px-3 py-1 rounded-full
-                        {{ $claim->method == 'fpx' ? 'bg-blue-100 text-blue-700' : '' }}
-                        {{ $claim->method == 'bankin' ? 'bg-green-100 text-green-700' : '' }}
-                        {{ $claim->method == 'selfpickup' ? 'bg-yellow-100 text-yellow-700' : '' }}">
-                        {{ strtoupper($claim->method) }}
-                    </span>
-                </div>
+    <p class="text-sm text-gray-500">
+        🚚 Delivery: {{ strtoupper($claim->delivery_method) }}
+    </p>
 
-                <p class="text-sm text-gray-600 mt-3">
-                    💳 Amount: RM {{ $claim->amount }}
-                </p>
+    <p class="text-xs text-gray-400 mt-3">
+        🕒 {{ $claim->created_at->format('d M Y') }}
+    </p>
 
-                <p class="text-xs text-gray-400 mt-3">
-                    {{ $claim->created_at->format('d M Y') }}
-                </p>
+    <div class="mt-4">
+        <a href="{{ route('admin.claimed.show', $claim->id) }}"
+           class="w-full block text-center bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700">
+            View Details
+        </a>
+    </div>
 
-                <div class="mt-4 flex gap-2">
-
-                    <a href="#"
-                       class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm">
-                        View Receipt
-                    </a>
-
-                    <button class="flex-1 bg-red-700 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-800">
-                        Details
-                    </button>
-
-                </div>
-
-            </div>
+</div>
 
         @empty
 
