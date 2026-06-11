@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin', ['active' => 'posts'])
 
 @section('content')
 
@@ -22,22 +22,26 @@
     <div class="card rounded-2xl p-6 shadow-lg">
 
         <!-- Image -->
-        <div class="mb-6">
+        <div class="bg-white rounded-2xl shadow p-4">
 
-            @if($post->image)
+    @if($post->image)
 
-                <img src="{{ asset('storage/'.$post->image) }}"
-                     class="w-full h-80 object-cover rounded-xl">
+        <img
+            src="{{ asset('storage/' . $post->image) }}"
+            alt="Post Image"
+            onclick="openImage(this.src)"
+            class="w-full max-h-[450px] object-contain rounded-xl bg-gray-100 cursor-zoom-in transition hover:scale-[1.02]"
+        >
 
-            @else
+    @else
 
-                <div class="h-80 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">
-                    No Image
-                </div>
-
-            @endif
-
+        <div class="h-64 flex items-center justify-center bg-gray-100 rounded-xl text-gray-400">
+            No Image
         </div>
+
+    @endif
+
+</div>
 
         <!-- Details -->
         <div class="grid md:grid-cols-2 gap-5">
@@ -154,14 +158,17 @@
 
         <div class="flex flex-wrap gap-3 mt-8">
 
-            <form action="{{ route('admin.posts.delete',$post->id) }}" method="POST">
+            <form action="{{ route('admin.posts.delete', $post->id) }}"
+                method="POST"
+                onsubmit="return confirmDelete()">
 
-                @csrf
+            @csrf
 
-                <button
-                    class="bg-red-700 hover:bg-red-800 text-white px-5 py-2 rounded-lg">
-                    🗑 Delete Post
-                </button>
+            <button
+                type="submit"
+                class="bg-red-700 hover:bg-red-800 text-white px-5 py-2 rounded-lg">
+                🗑 Delete Post
+            </button>
 
             </form>
 
@@ -187,5 +194,44 @@
     </div>
 
 </div>
+
+<!-- IMAGE MODAL -->
+<div id="imageModal"
+     class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-5">
+
+    <span
+        onclick="closeImage()"
+        class="absolute top-5 right-7 text-white text-5xl cursor-pointer">
+        &times;
+    </span>
+
+    <img id="modalImage"
+         class="max-w-[95%] max-h-[90%] rounded-xl shadow-xl">
+
+</div>
+
+<script>
+function openImage(src){
+    document.getElementById('modalImage').src = src;
+    document.getElementById('imageModal').classList.remove('hidden');
+}
+
+function closeImage(){
+    document.getElementById('imageModal').classList.add('hidden');
+}
+
+// Close when clicking outside the image
+document.getElementById('imageModal').addEventListener('click', function(e){
+    if(e.target.id === 'imageModal'){
+        closeImage();
+    }
+});
+</script>
+
+<script>
+function confirmDelete() {
+    return confirm("Are you sure you want to delete this post?");
+}
+</script>
 
 @endsection

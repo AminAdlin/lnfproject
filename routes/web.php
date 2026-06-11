@@ -18,8 +18,8 @@ use App\Http\Controllers\Admin\AdminPostController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\Admin\AdminDisputeController;
-use App\Http\Controllers\Admin\AdminTransactionController;
-
+use App\Http\Controllers\Admin\AdminClaimedController;
+use App\Http\Controllers\Admin\AdminDeletedController;
 
 // ── Landing ───────────────────────────────────────────────────────────────────
 Route::get('/', fn() => view('welcome'));
@@ -157,6 +157,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/posts/{id}/force', [AdminPostController::class, 'superDelete'])
             ->name('admin.posts.forceDelete');
 
+        // USERS 
         Route::get('/users', [AdminUserController::class, 'index'])
             ->name('admin.users');
 
@@ -172,19 +173,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{id}/unban', [AdminUserController::class, 'unban'])
             ->name('admin.users.unban');
 
-        Route::delete('/admin/users/{id}', [AdminUserController::class, 'destroy'])
-            ->name('admin.users.destroy');
-
+        // REPORTS
         Route::get('/reports', [AdminReportController::class, 'index']);
 
         Route::post('/reports/{id}/review', [AdminReportController::class, 'review']);
 
+        // DISPUTES
         Route::get('/disputes', [AdminDisputeController::class, 'index']);
 
         Route::get('/disputes/{id}', [AdminDisputeController::class, 'show']);
 
         Route::post('/disputes/{id}/resolve', [AdminDisputeController::class, 'resolve']);
 
-        Route::get('/transactions', [AdminTransactionController::class, 'index']);
+        Route::get('/claimed', [AdminClaimedController::class, 'index'])
+            ->name('admin.claimed');
+
+        Route::get('/deleted', [AdminDeletedController::class, 'index'])
+            ->name('admin.deleted');
     });
 });

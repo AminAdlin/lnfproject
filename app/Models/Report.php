@@ -9,11 +9,11 @@ class Report extends Model
     protected $fillable = [
         'item_id',
         'user_id',
+        'claim_id',
+        'type',
         'reason',
-        'message',
-        'status',
-        'reviewed_by',
-        'reviewed_at'
+        'description',
+        'status'
     ];
 
     public function item()
@@ -24,5 +24,10 @@ class Report extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function claim()
+    {
+        return $this->belongsTo(Claim::class);
     }
 }

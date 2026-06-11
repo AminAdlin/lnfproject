@@ -1,6 +1,14 @@
-@extends('layouts.admin')
+@extends('layouts.admin', ['active' => 'posts'])
 
 @section('content')
+
+@if(session('success'))
+
+<div class="mb-5 bg-green-100 border border-green-300 text-green-700 px-5 py-4 rounded-xl">
+    {{ session('success') }}
+</div>
+
+@endif
 
 <div class="max-w-6xl mx-auto p-6">
 

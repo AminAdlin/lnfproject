@@ -18,9 +18,9 @@ class AdminDisputeController extends Controller
         ->paginate(20);
 
         return view(
-            'admin.disputes.index',
-            compact('disputes')
-        );
+            'admin.disputes.index', [
+                'disputes' => $disputes
+        ]);
     }
 
     public function show($id)

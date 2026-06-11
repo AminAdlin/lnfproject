@@ -60,14 +60,55 @@
     <!-- Navigation -->
     <div class="order-3 lg:order-2 w-full lg:w-auto flex flex-wrap justify-center gap-2 text-xs sm:text-sm">
 
-        <a href="/admin/dashboard" class="bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-full">🏠 Dashboard</a>
-        <a href="/admin/users" class="bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-full">👥 Users</a>
-        <a href="/admin/posts" class="bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-full">📦 Posts</a>
-        <a href="/admin/reports" class="bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-full">🚨 Reports</a>
-        <a href="/admin/disputes" class="bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-full">⚖️ Disputes</a>
-        <a href="/admin/claimed" class="bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-full">✅ Claimed</a>
-        <a href="/admin/deleted" class="bg-white/20 hover:bg-white/30 transition px-4 py-2 rounded-full">🗑️ Deleted</a>
-
+        <a href="/admin/dashboard"
+            class="transition px-4 py-2 rounded-full
+            {{ ($active ?? '') == 'dashboard'
+                ? 'bg-white text-red-800 font-bold shadow'
+                : 'bg-white/20 hover:bg-white/30' }}">
+            🏠 Dashboard
+        </a>
+        <a href="/admin/users"
+            class="transition px-4 py-2 rounded-full
+            {{ ($active ?? '') == 'users'
+                ? 'bg-white text-red-800 font-bold shadow'
+                : 'bg-white/20 hover:bg-white/30' }}">
+            👥 Users
+        </a>
+        <a href="/admin/posts"
+           class="transition px-4 py-2 rounded-full
+           {{ ($active ?? '') == 'posts'
+                ? 'bg-white text-red-800 font-bold shadow'
+                : 'bg-white/20 hover:bg-white/30' }}">
+            📦 Posts
+        </a>
+        <a href="/admin/reports"
+            class="transition px-4 py-2 rounded-full
+            {{ ($active ?? '') == 'reports'
+                ? 'bg-white text-red-800 font-bold shadow'
+                : 'bg-white/20 hover:bg-white/30' }}">
+            🚨 Reports
+        </a>
+        <a href="/admin/disputes"
+            class="transition px-4 py-2 rounded-full
+            {{ ($active ?? '') == 'disputes'
+                ? 'bg-white text-red-800 font-bold shadow'
+                : 'bg-white/20 hover:bg-white/30' }}">
+            ⚖️ Disputes
+        </a>
+        <a href="/admin/claimed"
+            class="transition px-4 py-2 rounded-full
+            {{ ($active ?? '') == 'claimed'
+                ? 'bg-white text-red-800 font-bold shadow'
+                : 'bg-white/20 hover:bg-white/30' }}">
+            ✅ Claimed
+        </a>
+        <a href="/admin/deleted"
+            class="transition px-4 py-2 rounded-full
+            {{ ($active ?? '') == 'deleted'
+                ? 'bg-white text-red-800 font-bold shadow'
+                : 'bg-white/20 hover:bg-white/30' }}">
+            🗑️ Deleted
+        </a>
     </div>
 
     <!-- Logout -->

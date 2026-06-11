@@ -6,21 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Claim;
 use Illuminate\Http\Request;
 
-class AdminTransactionController extends Controller
+class AdminClaimedController extends Controller
 {
     public function index()
     {
-        $transactions = Claim::with([
+        $claimed = Claim::with([
             'item',
             'user'
         ])
-        ->whereNotNull('payment_method')
+        ->whereIn('payment_method', ['fpx', 'bankin', 'selfpickup'])
         ->latest()
         ->paginate(20);
 
         return view(
-            'admin.transactions.index',
-            compact('transactions')
+            'admin.claimed.index',
+            compact('claimed')
         );
     }
 }

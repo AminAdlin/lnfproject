@@ -67,7 +67,7 @@
         </div>
     </a>
 
-    <a href="/admin/posts?type=claimed">
+    <a href="/admin/claimed">
         <div class="card p-6 hover:scale-105 cursor-pointer">
             <div class="text-4xl mb-3">✅</div>
             <h1 class="text-5xl font-bold text-red-800">{{ $totalClaimed }}</h1>
@@ -75,7 +75,7 @@
         </div>
     </a>
 
-    <a href="/admin/posts?type=deleted">
+    <a href="/admin/deleted">
         <div class="card p-6 hover:scale-105 cursor-pointer">
             <div class="text-4xl mb-3">🗑️</div>
             <h1 class="text-5xl font-bold text-red-800">{{ $deletedPosts }}</h1>

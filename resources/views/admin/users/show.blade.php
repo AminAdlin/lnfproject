@@ -147,7 +147,7 @@
             @endif
 
             {{-- DELETE --}}
-            <form action="{{ route('admin.users.destroy', $user->id) }}"
+            <form action="{{ route('admin.users.delete', $user->id) }}"
                 method="POST"
                 onsubmit="return confirm('Are you sure you want to delete this user?');">
 

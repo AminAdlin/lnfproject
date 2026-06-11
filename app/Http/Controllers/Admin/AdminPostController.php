@@ -63,13 +63,13 @@ public function index(Request $request)
 
     public function delete($id)
     {
-        $item = Item::findOrFail($id);
+        $post = Item::findOrFail($id);
 
-        $item->delete();
+        $post->delete();
 
-        return back()->with(
-            'status',
-            'Post deleted successfully.'
+        return redirect()
+            ->route('admin.posts')
+            ->with('success', 'Post deleted successfully!'
         );
     }
 
