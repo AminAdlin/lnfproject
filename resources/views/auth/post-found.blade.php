@@ -164,10 +164,12 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Security Answer</label>
+                        
                         <input type="text" name="security_answer" value="{{ old('security_answer') }}"
                             placeholder="Your answer here" required
                             class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm @error('security_answer') border-red-400 @enderror" />
-                    </div>
+                        <p class="text-xs text-gray-400 mt-1">⚠️ Answer must be a single word. e.g. "blue", "wallet", "A1234"</p>
+                        </div>
                 </div>
                 
                 <div class="mt-6 border-t border-gray-100 pt-6">

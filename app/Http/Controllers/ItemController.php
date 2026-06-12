@@ -31,7 +31,7 @@ class ItemController extends Controller
             'contact' => 'required|string',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'security_question' => 'required|string',
-            'security_answer' => 'required|string',
+            'security_answer' => 'required|string|regex:/^\S+$/|max:50',
             // Validation for finder's banking information
             'bank_name' => 'required|string|max:100',
             'bank_account' => 'required|string|max:50',

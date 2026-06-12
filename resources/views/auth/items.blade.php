@@ -508,7 +508,7 @@
                                             📦 Mark as Returned / Shipped
                                         </button>
                                     </form>
-                                    @if($approvedClaim && $approvedClaim->payment_method === 'manual' || $approvedClaim && $approvedClaim->payment_status === 'paid')
+                                    @if($approvedClaim && ($approvedClaim->payment_method === 'manual' || $approvedClaim->payment_status === 'paid'))
 <div class="mt-2 pt-2 border-t border-gray-100">
 <button onclick="openDisputeModal({{ $item->id }}, 'fake_receipt')"
          class="w-full text-center text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 py-2 px-4 rounded-xl transition border border-red-100">

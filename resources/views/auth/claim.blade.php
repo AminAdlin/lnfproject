@@ -154,7 +154,8 @@
                         placeholder="Type your answer here..."
                         required
                         class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium" />
-                </div>
+                        <p class="text-xs text-gray-400 mt-1">💡 Answer is one word only, case-insensitive.</p>
+                    </div>
 
                 {{-- Delivery Method --}}
                 <div class="mb-6">
@@ -261,33 +262,45 @@
         })
         .then(res => res.json())
         .then(data => {
-            console.log(data);
-            if (data.success) {
-                // Correct — submit form
-                console.log('submitting form:', document.getElementById('claim-form'));
-                document.getElementById('claim-form').submit();
-            } else {
-                wrongAttempts++;
-                
-                if (wrongAttempts >= 3) {
-                    // Show report button after 3 wrong attempts
-                    document.getElementById('report-wrong-answer').classList.remove('hidden');
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Incorrect Answer',
-                        text: 'You have entered the wrong answer 3 times. If you believe your answer is correct, you may report this issue.',
-                        confirmButtonColor: '#800000'
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Incorrect Answer',
-                        text: 'Wrong answer. Attempts: ' + wrongAttempts + '/3',
-                        confirmButtonColor: '#800000'
-                    });
-                }
-            }
+    console.log(data);
+    if (data.success) {
+        console.log('submitting form:', document.getElementById('claim-form'));
+        document.getElementById('claim-form').submit();
+    } else if (data.locked) {
+        document.getElementById('report-wrong-answer').classList.remove('hidden');
+        Swal.fire({
+            icon: 'error',
+            title: 'Access Blocked',
+            text: 'You have been blocked from claiming this item.',
+            confirmButtonColor: '#800000'
         });
+    } else if (data.message) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid Answer',
+            text: data.message,
+            confirmButtonColor: '#800000'
+        });
+    } else {
+        wrongAttempts++;
+        if (wrongAttempts >= 3) {
+            document.getElementById('report-wrong-answer').classList.remove('hidden');
+            Swal.fire({
+                icon: 'error',
+                title: 'Incorrect Answer',
+                text: 'You have entered the wrong answer 3 times. If you believe your answer is correct, you may report this issue.',
+                confirmButtonColor: '#800000'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Incorrect Answer',
+                text: 'Wrong answer. Attempts: ' + wrongAttempts + '/3',
+                confirmButtonColor: '#800000'
+            });
+        }
+    }
+});
     }
 
     function openWrongAnswerReport() {

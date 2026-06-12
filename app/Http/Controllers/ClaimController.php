@@ -84,9 +84,17 @@ class ClaimController extends Controller
         ]);
     }
 
-    if (strtolower(trim($request->answer)) === strtolower(trim($item->security_answer))) {
-        return response()->json(['success' => true]);
-    }
+    $answer = strtolower(trim($request->answer));
+if (str_word_count($answer) > 1) {
+    return response()->json([
+        'success' => false,
+        'message' => 'Answer must be a single word only.',
+    ]);
+}
+
+if ($answer === strtolower(trim($item->security_answer))) {
+    return response()->json(['success' => true]);
+}
 
     // Increment attempts
     $attemptRecord->increment('attempts');
@@ -218,6 +226,8 @@ class ClaimController extends Controller
         $claim->update([
             'payment_receipt'  => $path,
             'shipping_address' => $request->shipping_address,
+            'payment_method'   => 'manual',
+            'payment_status'   => 'paid',
         ]);
 
         //  Finder needs to ship → status: claimed
