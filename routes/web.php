@@ -174,7 +174,7 @@ Route::middleware('auth')->group(function () {
             ->name('admin.users.unban');
 
         // REPORTS
-        Route::get('/reports', [AdminReportController::class, 'index']);
+        Route::get('/reports', [AdminReportController::class, 'index'])->name('admin.reports.index');
 
         Route::post('/reports/{id}/review', [AdminReportController::class, 'review']);
             
@@ -206,5 +206,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/deleted/{id}/restore',
             [AdminDeletedController::class,'restore'])
             ->name('admin.deleted.restore');
+
+        Route::post('/reports/{id}/decide', [AdminReportController::class, 'decide'])->name('admin.reports.decide');
     });
 });

@@ -138,45 +138,57 @@
 
             <form method="POST" action="/items/{{ $item->id }}/claim" id="claim-form">
                 @csrf
+@if($adminApproved)
+    {{-- Admin Verified --}}
+    <div class="mb-5 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+        <span class="text-xl">✅</span>
+        <div>
+            <p class="text-sm font-bold text-green-800">Admin Verified</p>
+            <p class="text-xs text-green-600 mt-0.5">Your ownership has been verified by our admin team. You may proceed to claim this item.</p>
+        </div>
+    </div>
+    {{-- Hidden answer field — bypass security --}}
+    <input type="hidden" name="answer" value="admin_bypass">
+@else
+    {{-- Security Question --}}
+    <div class="mb-5">
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Security Question</label>
+        <div class="bg-red-50 border border-red-100 rounded-xl p-4">
+            <p class="text-sm text-red-800 font-bold">{{ $item->security_question }}</p>
+        </div>
+    </div>
 
-                {{-- Security Question --}}
-                <div class="mb-5">
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Security Question</label>
-                    <div class="bg-red-50 border border-red-100 rounded-xl p-4">
-                        <p class="text-sm text-red-800 font-bold">{{ $item->security_question }}</p>
-                    </div>
-                </div>
+    {{-- Answer --}}
+    <div class="mb-5">
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Your Answer</label>
+        <input type="text" name="answer" value="{{ old('answer') }}"
+            placeholder="Type your answer here..."
+            required
+            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium" />
+        <p class="text-xs text-gray-400 mt-1">💡 Answer is one word only, case-insensitive.</p>
+    </div>
+@endif
 
-                {{-- Answer --}}
-                <div class="mb-5">
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Your Answer</label>
-                    <input type="text" name="answer" value="{{ old('answer') }}"
-                        placeholder="Type your answer here..."
-                        required
-                        class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-800 text-sm font-medium" />
-                        <p class="text-xs text-gray-400 mt-1">💡 Answer is one word only, case-insensitive.</p>
-                    </div>
-
-                {{-- Delivery Method --}}
-                <div class="mb-6">
-                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Recovery Method</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <label class="flex items-center gap-3 border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-red-300 hover:bg-red-50 transition card-texture">
-                            <input type="radio" name="delivery_method" value="self_pickup" required class="text-red-800">
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">🏃 Self Pickup</p>
-                                <p class="text-xs text-gray-400">Pick up in person</p>
-                            </div>
-                        </label>
-                        <label class="flex items-center gap-3 border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-red-300 hover:bg-red-50 transition card-texture">
-                            <input type="radio" name="delivery_method" value="delivery" required class="text-red-800">
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">🚚 Delivery</p>
-                                <p class="text-xs text-gray-400 mt-0.5">Delivery fee RM 10.00</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+{{-- Delivery Method --}}
+<div class="mb-6">
+    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Recovery Method</label>
+    <div class="grid grid-cols-2 gap-3">
+        <label class="flex items-center gap-3 border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-red-300 hover:bg-red-50 transition card-texture">
+            <input type="radio" name="delivery_method" value="self_pickup" required class="text-red-800">
+            <div>
+                <p class="text-sm font-bold text-gray-800">🏃 Self Pickup</p>
+                <p class="text-xs text-gray-400">Pick up in person</p>
+            </div>
+        </label>
+        <label class="flex items-center gap-3 border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-red-300 hover:bg-red-50 transition card-texture">
+            <input type="radio" name="delivery_method" value="delivery" required class="text-red-800">
+            <div>
+                <p class="text-sm font-bold text-gray-800">🚚 Delivery</p>
+                <p class="text-xs text-gray-400 mt-0.5">Delivery fee RM 10.00</p>
+            </div>
+        </label>
+    </div>
+</div>
 
                 {{-- Buttons --}}
 <div class="flex gap-3">

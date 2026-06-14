@@ -52,21 +52,17 @@
                 </p>
 
                 {{-- STATUS --}}
-                <div class="mt-3">
-                    @if($report->status == 'pending')
-                        <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">
-                            PENDING
-                        </span>
-                    @elseif($report->status == 'reviewed')
-                        <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                            REVIEWED
-                        </span>
-                    @else
-                        <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                            CLOSED
-                        </span>
-                    @endif
-                </div>
+<div class="mt-3">
+    @if($report->status == 'pending')
+        <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-bold">⏳ PENDING</span>
+    @elseif($report->status == 'reviewed')
+        <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">👁️ REVIEWED</span>
+    @elseif($report->status == 'dismissed')
+        <span class="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">✅ RESOLVED</span>
+    @else
+        <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-bold">CLOSED</span>
+    @endif
+</div>
 
                 {{-- DATE --}}
                 <p class="text-xs text-gray-400 mt-3">
@@ -74,30 +70,55 @@
                 </p>
 
                 {{-- ACTION BUTTONS --}}
-                <div class="mt-4 flex gap-2">
+<div class="mt-4 flex gap-2 flex-wrap">
 
-                    <a href="/admin/posts/{{ $report->item_id }}"
-                       class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm">
-                        View Item
-                    </a>
+    <a href="/admin/posts/{{ $report->item_id }}"
+       class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm">
+        View Item
+    </a>
 
-                    @if($report->status == 'reviewed')
-    <button class="bg-green-500 text-white px-3 py-2 rounded opacity-70 cursor-not-allowed" disabled>
-        Reviewed
-    </button>
-@else
-    <form method="POST" action="{{ route('admin.reports.reviewed', $report->id) }}">
-        @csrf
+    @if($report->status === 'dismissed')
+        <div class="w-full mt-2 p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700 font-semibold text-center">
+            ✅ This report has been resolved
+        </div>
 
-        <button
-            type="submit"
-            onclick="return confirm('Are you sure you want to mark this as reviewed?')"
-            class="bg-blue-500 text-white px-3 py-2 rounded">
-            Mark Reviewed
+    @elseif($report->reason === 'wrong_security_answer')
+        <form method="POST" action="{{ route('admin.reports.decide', $report->id) }}">
+            @csrf
+            <input type="hidden" name="decision" value="approve">
+            <button type="submit"
+                onclick="return confirm('Approve? This will unlock the claimant.')"
+                class="bg-green-600 text-white px-3 py-2 rounded-lg text-sm">
+                ✅ Approve
+            </button>
+        </form>
+        <form method="POST" action="{{ route('admin.reports.decide', $report->id) }}">
+            @csrf
+            <input type="hidden" name="decision" value="reject">
+            <button type="submit"
+                onclick="return confirm('Reject this report?')"
+                class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm">
+                ❌ Reject
+            </button>
+        </form>
+
+    @elseif($report->status === 'reviewed')
+        <button class="bg-green-500 text-white px-3 py-2 rounded opacity-70 cursor-not-allowed" disabled>
+            Reviewed
         </button>
-    </form>
-@endif
-                </div>
+
+    @else
+        <form method="POST" action="{{ route('admin.reports.reviewed', $report->id) }}">
+            @csrf
+            <button type="submit"
+                onclick="return confirm('Mark as reviewed?')"
+                class="bg-blue-500 text-white px-3 py-2 rounded">
+                Mark Reviewed
+            </button>
+        </form>
+    @endif
+
+</div>
 
             </div>
 

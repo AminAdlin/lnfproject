@@ -41,29 +41,35 @@ class ClaimController extends Controller
     */
 
     public function showClaimForm($id)
-    {
-        $item = Item::findOrFail($id);
+{
+    $item = Item::findOrFail($id);
 
-        if ($item->type !== 'found') {
-            return back()->with('error', 'This item cannot be claimed here.');
-        }
-        if ($item->user_id === auth()->id()) {
-            return back()->with('error', 'You cannot claim your own post.');
-        }
-        if ($item->status !== 'active') {
-            return back()->with('error', 'This item is no longer available for claiming.');
-        }
-        if (Claim::where('item_id', $id)->where('user_id', auth()->id())->exists()) {
-            return back()->with('error', 'You have already submitted a claim for this item.');
-        }
-
-        $attemptRecord = \App\Models\ClaimAttempt::where('item_id', $id)
-                      ->where('user_id', auth()->id())
-                      ->first();
-        $isLocked = $attemptRecord && $attemptRecord->locked;
-
-    return view('auth.claim', compact('item', 'isLocked'));
+    if ($item->type !== 'found') {
+        return back()->with('error', 'This item cannot be claimed here.');
     }
+    if ($item->user_id === auth()->id()) {
+        return back()->with('error', 'You cannot claim your own post.');
+    }
+    if ($item->status !== 'active') {
+        return back()->with('error', 'This item is no longer available for claiming.');
+    }
+    if (Claim::where('item_id', $id)->where('user_id', auth()->id())->exists()) {
+        return back()->with('error', 'You have already submitted a claim for this item.');
+    }
+
+    $attemptRecord = \App\Models\ClaimAttempt::where('item_id', $id)
+                  ->where('user_id', auth()->id())
+                  ->first();
+    $isLocked = $attemptRecord && $attemptRecord->locked;
+
+    $adminApproved = \App\Models\Report::where('item_id', $id)
+        ->where('user_id', auth()->id())
+        ->where('reason', 'wrong_security_answer')
+        ->where('status', 'dismissed')
+        ->exists();
+
+    return view('auth.claim', compact('item', 'isLocked', 'adminApproved'));
+}
 
     public function checkSecurityAnswer(Request $request, $id)
 {
@@ -83,7 +89,9 @@ class ClaimController extends Controller
             'message' => 'You have been blocked from claiming this item.',
         ]);
     }
-
+if ($request->answer === 'admin_bypass') {
+    return response()->json(['success' => true]);
+}
     $answer = strtolower(trim($request->answer));
 if (str_word_count($answer) > 1) {
     return response()->json([
@@ -118,68 +126,74 @@ if ($answer === strtolower(trim($item->security_answer))) {
      * Pickup    → email Finder untuk set appointment, redirect ke items
      */
     public function submitClaim(Request $request, $id)
-    {
-        $item = Item::with('user')->findOrFail($id);
+{
+    $item = Item::with('user')->findOrFail($id);
 
-        $request->validate([
-            'answer'          => 'required|string',
-            'delivery_method' => 'required|in:self_pickup,delivery',
-        ]);
+    $request->validate([
+        'answer'          => 'required|string',
+        'delivery_method' => 'required|in:self_pickup,delivery',
+    ]);
 
-        // Security question must be correct
+    // Admin veto bypass check
+    $adminApproved = \App\Models\Report::where('item_id', $id)
+        ->where('user_id', auth()->id())
+        ->where('reason', 'wrong_security_answer')
+        ->where('status', 'dismissed')
+        ->exists();
+
+    // Security question check — skip if admin approved
+    if (!$adminApproved) {
         if (strtolower(trim($request->answer)) !== strtolower(trim($item->security_answer))) {
             return back()->withErrors(['answer' => 'Incorrect answer. Please try again.'])->withInput();
         }
-
-        // Create claim — auto approved (security Q is the verification)
-        $claim = Claim::create([
-            'item_id'         => $item->id,
-            'user_id'         => auth()->id(),
-            'answer'          => $request->answer,
-            'delivery_method' => $request->delivery_method,
-            'status'          => 'approved',
-        ]);
-
-        if ($request->delivery_method === 'delivery') {
-            // Update item status → awaiting payment
-            $item->update(['status' => 'awaiting_payment']);
-
-            // Redirect Owner to payment page
-            return redirect()->route('claim.payment', $claim->id);
-        }
-
-        // Self-pickup → email Finder to set appointment
-        $item->update(['status' => 'awaiting_appointment']);
-
-        try {
-            $finderName  = $item->user->name;
-            $finderEmail = $item->user->email;
-            $ownerName   = auth()->user()->name;
-            $itemTitle   = $item->title;
-
-            Mail::send([], [], function ($msg) use ($finderEmail, $finderName, $ownerName, $itemTitle, $item) {
-                $msg->to($finderEmail)
-                    ->subject('[UTM FoundIt] Action Required: Set Pickup Appointment for ' . $itemTitle)
-                    ->html("
-                        <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
-                            <h2 style='color:#800000;'>Hello, {$finderName}!</h2>
-                            <p>Good news! <strong>{$ownerName}</strong> has successfully verified ownership and claimed your found item: <strong>{$itemTitle}</strong>.</p>
-                            <p>They chose <strong>Self Pickup</strong>. Please log in and set an appointment date, time, and location so they can collect it.</p>
-                            <p>
-                                <a href='" . url('/items') . "' style='background:#800000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;'>
-                                    Set Appointment Now
-                                </a>
-                            </p>
-                            <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
-                        </div>
-                    ");
-            });
-        } catch (\Exception $e) {
-            \Log::error('submitClaim pickup email to Finder failed: ' . $e->getMessage());
-        }
-
-        return redirect('/items')->with('status', 'Claim successful! The finder has been notified to set a pickup appointment.');
     }
+
+    // Create claim — auto approved
+    $claim = Claim::create([
+        'item_id'         => $item->id,
+        'user_id'         => auth()->id(),
+        'answer'          => $request->answer,
+        'delivery_method' => $request->delivery_method,
+        'status'          => 'approved',
+    ]);
+
+    if ($request->delivery_method === 'delivery') {
+        $item->update(['status' => 'awaiting_payment']);
+        return redirect()->route('claim.payment', $claim->id);
+    }
+
+    // Self-pickup → email Finder to set appointment
+    $item->update(['status' => 'awaiting_appointment']);
+
+    try {
+        $finderName  = $item->user->name;
+        $finderEmail = $item->user->email;
+        $ownerName   = auth()->user()->name;
+        $itemTitle   = $item->title;
+
+        Mail::send([], [], function ($msg) use ($finderEmail, $finderName, $ownerName, $itemTitle, $item) {
+            $msg->to($finderEmail)
+                ->subject('[UTM FoundIt] Action Required: Set Pickup Appointment for ' . $itemTitle)
+                ->html("
+                    <div style='font-family:Arial,sans-serif;padding:25px;color:#333;max-width:600px;border:1px solid #e5e7eb;border-radius:16px;'>
+                        <h2 style='color:#800000;'>Hello, {$finderName}!</h2>
+                        <p>Good news! <strong>{$ownerName}</strong> has successfully verified ownership and claimed your found item: <strong>{$itemTitle}</strong>.</p>
+                        <p>They chose <strong>Self Pickup</strong>. Please log in and set an appointment date, time, and location so they can collect it.</p>
+                        <p>
+                            <a href='" . url('/items') . "' style='background:#800000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;'>
+                                Set Appointment Now
+                            </a>
+                        </p>
+                        <p style='color:#999;font-size:12px;margin-top:20px;'>Automated email — do not reply.</p>
+                    </div>
+                ");
+        });
+    } catch (\Exception $e) {
+        \Log::error('submitClaim pickup email to Finder failed: ' . $e->getMessage());
+    }
+
+    return redirect('/items')->with('status', 'Claim successful! The finder has been notified to set a pickup appointment.');
+}
 
     /*
     |--------------------------------------------------------------------------

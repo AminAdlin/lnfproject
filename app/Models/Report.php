@@ -13,7 +13,8 @@ class Report extends Model
         'type',
         'reason',
         'description',
-        'status'
+        'status',
+        'message'
     ];
 
     public function item()
